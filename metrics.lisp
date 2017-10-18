@@ -42,10 +42,33 @@
             (setf (nth i degree-list) (degree g n)))
         degree-list))
 
-    ;; "Retorna a densidade do grafo g"
+;; "Retorna a densidade do grafo g"
 (defmethod graph-density ((g graph))
     (let ((size))
         (setf size (list-length (nodes g)))
         (if (= (g-type g) 1)
             (* 1.0 (/ (list-length (edges g)) (* (- size 1) size)))
             (* 1.0 (/ (list-length (edges g)) (/ (* (- size 1) size) 2))))))
+
+;; Função que retorna a distribuição de um grau (de entrada, se inp = t) em um grafo
+(defmethod degree-dist ((g graph) degree inp &optional &key (deg-list nil))
+    (let ((counter))
+        (setf counter 0)
+        (when (not deg-list)
+            (setf deg-list (degree-list g)))
+        (dolist (e deg-list)
+            (when (equal degree (if inp (second e) (first e)))
+                (setf counter (+ 1 counter))))
+        (* 1.0 (/ counter (list-length (nodes g))))))
+
+;; Retorna o grau (de entrada, caso inp = t) esperado do grafo
+(defmethod expt-degree ((g graph) inp &optional &key (deg-list nil))
+    (let ((degree-sum) (deg-index))
+        (setf degree-sum 0)
+        (setf deg-index (if inp 0 1))
+        (when (not deg-list)
+            (setf deg-list (degree-list g)))
+        (dolist (e deg-list)
+            (setf degree-sum (+ degree-sum (nth deg-index e))))
+        (* 1.0 (/ degree-sum (list-length (nodes g))))))
+
