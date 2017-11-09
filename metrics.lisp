@@ -20,19 +20,19 @@
     (let ((degree) (ad-list))
         (setf degree (list 0 0))
         (setf ad-list (get-adj-list g))
-        (setf (first degree) (list-length (nth (first node) ad-list)))
+        (setf (first degree) (list-length (nth node ad-list)))
         (if (= 2 (g-type g))
             (progn
                 (setf (second degree) (first degree))
                 degree)
             (progn 
                 (loop for edge-list in ad-list and i from 0 do
-                    (if (= (first node) i)
+                    (if (= node i)
                         (setf (first degree) (list-length edge-list))
                         (let ((count))
                             (setf count (second degree))
                             (dolist (edge edge-list)
-                                (if (= (first edge) (first node))
+                                (if (= (first edge) node)
                                     (setf count (+ 1 count))))
                             (setf (second degree) count))))
                 degree))))
@@ -78,3 +78,29 @@
             (dolist (e (get-degree-list g))
                 (setf degree-sum (+ degree-sum (nth deg-index e))))
             (setf (expt-degree g) (* 1.0 (/ degree-sum (list-length (nodes g))))))))
+
+;; Retorna o menor caminho entre os nós n1 e n2 do grafo g. O menor caminho
+;; seria aquele que possui menos arestas (ou o que passa por menos nós), 
+;; desconsiderando o peso. Se quiser o caminho com menor custo de pesos, 
+;; tente a função lowest-cost-path. Retorna nil se não houver caminho.
+(defmethod shortest-path ((g graph) n1 n2)
+    (let ((adj-list nil) (path nil) (node-line nil))
+        (setf adj-list (get-adj-list g))
+        (push n1 node-line)
+        (loop
+            (let ((found-n2 nil) (current-node nil))
+                (setf current-node (pop node-line))
+                (dolist (e (nth current-node adj-list))
+                    (let ((neighbor-node nil))
+                        (setf neighbor-node (first e))
+                        (if (equal neighbor-node n2)
+                            (progn
+                                (push neighbor-node path)
+                                (setf found-n2 t))
+                            (when (not (find neighbor-node node-line))
+                                (push neighbor-node node-line)))))
+                (push current-node path)
+                (if found-n2
+                    (return (reverse path))
+                    (when (null node-line)
+                        (return nil)))))))

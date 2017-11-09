@@ -14,7 +14,7 @@
                             (if (string= (first e) "#")
                                 (setf current-list 2)
                                 (if (= current-list 1)
-                                    (push (mapcar #'parse-integer e) nodes)
+                                    (push (parse-integer (first e)) nodes)
                                     (push (mapcar #'parse-integer e) edges))))))
             (close in))
         (setf (nodes graph) nodes)

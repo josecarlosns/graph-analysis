@@ -57,5 +57,5 @@
     (format t "Nº de nós do grafo: ~a~%Nº de arestas do grafo: ~a~%" 
         (list-length (nodes g)) (list-length (edges g)))
     (when full-print
-        (format t "Nós do grafo:~%~a~%Arestas do grafo:~%~a" (nodes g) (edges g))))
+        (format t "Nós do grafo:~%~a~%Arestas do grafo:~%~a~%" (nodes g) (edges g))))
         
