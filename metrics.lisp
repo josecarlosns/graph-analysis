@@ -84,23 +84,38 @@
 ;; desconsiderando o peso. Se quiser o caminho com menor custo de pesos, 
 ;; tente a função lowest-cost-path. Retorna nil se não houver caminho.
 (defmethod shortest-path ((g graph) n1 n2)
-    (let ((adj-list nil) (path nil) (node-line nil))
-        (setf adj-list (get-adj-list g))
-        (push n1 node-line)
+    (let ((parent nil) (unvisited-nodes nil) (visited-nodes nil) (path nil) (found-n2 nil))
+        (setf parent (make-list (list-length (nodes g)) :initial-element -1))
+        (push n1 unvisited-nodes)
+        (setf (nth n1 parent) n1)
         (loop
-            (let ((found-n2 nil) (current-node nil))
-                (setf current-node (pop node-line))
-                (dolist (e (nth current-node adj-list))
+            (let ((current-node nil))
+                (setf current-node (pop unvisited-nodes))
+                (dolist (e (nth current-node (get-adj-list g)))
                     (let ((neighbor-node nil))
                         (setf neighbor-node (first e))
-                        (if (equal neighbor-node n2)
-                            (progn
-                                (push neighbor-node path)
+                        (when (= -1 (nth neighbor-node parent))
+                                (setf (nth neighbor-node parent) current-node))
+                        (when (equal neighbor-node n2)
                                 (setf found-n2 t))
-                            (when (not (find neighbor-node node-line))
-                                (push neighbor-node node-line)))))
-                (push current-node path)
-                (if found-n2
-                    (return (reverse path))
-                    (when (null node-line)
-                        (return nil)))))))
+                        (when (and (not (find neighbor-node visited-nodes)) (not (find neighbor-node unvisited-nodes)))
+                                (setf unvisited-nodes (append unvisited-nodes (list neighbor-node))))))
+                (push current-node visited-nodes)
+                (when (null unvisited-nodes)
+                    (return nil))
+                (when found-n2
+                    (progn
+                        (push n2 path)
+                        (loop
+                            (let ((node nil))
+                                (setf node (first path))
+                                (when (= node n1)
+                                    (return path))
+                                (push (nth node parent) path)))
+                        (return path)))))))
+
+;; Retorna o maior caminho entre os nós n1 e n2 do grafo g. O maior caminho seria aquele
+;; que possui mais arestas (ou que passa por mais nós), desconsiderando o peso. Se quiser 
+;; o caminho com maior custo tente a função highest-cost-path. Retorna nil se não houver caminho.
+(defmethod longest-path ((g graph) n1 n2)
+    )
