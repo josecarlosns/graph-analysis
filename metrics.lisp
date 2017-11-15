@@ -85,17 +85,17 @@
 ;; tente a função lowest-cost-path. Retorna nil se não houver caminho.
 (defmethod shortest-path ((g graph) n1 n2)
     (let ((parent nil) (unvisited-nodes nil) (visited-nodes nil) (path nil) (found-n2 nil))
-        (setf parent (make-list (list-length (nodes g)) :initial-element -1))
+        (setf parent (make-array (list-length (nodes g)) :initial-element -1))
         (push n1 unvisited-nodes)
-        (setf (nth n1 parent) n1)
+        (setf (aref parent n1) n1)
         (loop
             (let ((current-node nil))
                 (setf current-node (pop unvisited-nodes))
                 (dolist (e (nth current-node (get-adj-list g)))
                     (let ((neighbor-node nil))
                         (setf neighbor-node (first e))
-                        (when (= -1 (nth neighbor-node parent))
-                                (setf (nth neighbor-node parent) current-node))
+                        (when (= -1 (aref parent neighbor-node))
+                                (setf (aref parent neighbor-node) current-node))
                         (when (equal neighbor-node n2)
                                 (setf found-n2 t))
                         (when (and (not (find neighbor-node visited-nodes)) (not (find neighbor-node unvisited-nodes)))
@@ -111,11 +111,49 @@
                                 (setf node (first path))
                                 (when (= node n1)
                                     (return path))
-                                (push (nth node parent) path)))
+                                (push (aref parent node) path)))
                         (return path)))))))
 
-;; Retorna o maior caminho entre os nós n1 e n2 do grafo g. O maior caminho seria aquele
-;; que possui mais arestas (ou que passa por mais nós), desconsiderando o peso. Se quiser 
-;; o caminho com maior custo tente a função highest-cost-path. Retorna nil se não houver caminho.
-(defmethod longest-path ((g graph) n1 n2)
-    )
+;; Retorna a distância média do grafo g. A distância média seria a média das menores distâncias entre os nós
+;; do grafo sem considerar os pesos, ou seja, considerando apenas a distância em número de arestas ou nós.
+;; Se quiser o custo médio do grafo, tente a função average-cost. Retorna nil se o grafo não for conexo
+(defmethod average-distance ((g graph))
+    (let ((total-distance nil) (total-efficiency nil) (progress nil) (max-num-paths nil) (total-time nil) (etl nil) (unconnected nil))
+        (setf total-distance 0)
+        (setf total-efficiency 0)
+        (setf progress 0)
+        (setf max-num-paths (list-length (nodes g)))
+        (setf max-num-paths (* max-num-paths (1- max-num-paths)))
+        (when (= 2 (g-type g))
+            (setf max-num-paths (/ max-num-paths 2)))
+        (setf total-time 0)
+        (dolist (x (nodes g))
+            (dolist (y (nodes g))
+                (let ((start-time nil) (end-time nil) (distance nil))
+                    (setf start-time (get-internal-real-time))
+                    (when (not (equal x y))
+                        (if (= 1 (g-type g))
+                            (progn
+                                (setf distance (shortest-path g x y))
+                                (incf progress))
+                            (when (> x y)
+                                (setf distance (shortest-path g x y))
+                                (incf progress)))
+                        (if distance
+                            (setf distance (1- (list-length distance)))
+                            (return (setf unconnected t)))
+                        (setf total-distance (+ total-distance distance))
+                        (setf total-efficiency (+ total-efficiency (/ 1 distance)))
+                        (setf end-time (get-internal-real-time))
+                        (setf end-time (- end-time start-time))
+                        (setf total-time (+ total-time end-time))
+                        (format t "~%Progresso do cálculo da distância+eficiência média: ~,5f%~%" (* 100.0 (/ progress max-num-paths)))
+                        (format t "Tempo decorrido em HH:MM:SS: ~d:~2,'0d:~2,'0d~%" (floor (/ total-time (* 1000 60 60))) (rem (floor (/ total-time (* 1000 60))) 60) (rem (floor (/ total-time 1000)) 60))
+                        (setf etl (* (- max-num-paths progress) (/ total-time progress)))
+                        (format t "Tempo restante estimado em HH:MM:SS: ~d:~2,'0d:~2,'0d~%" (floor (/ etl (* 1000 60 60))) (rem (floor (/ etl (* 1000 60))) 60) (rem (floor (/ etl 1000)) 60))
+                        (terpri))))
+            (when unconnected
+                (return nil)))
+         (if unconnected
+            nil
+            (list (/ total-distance max-num-paths) (/ total-efficiency max-num-paths)))))
