@@ -38,7 +38,7 @@
             (push i (nodes g)))
         (dolist (i (nodes g))
             (dolist (j (nodes g))
-                (if (and (not (eq i j)) (<= (random 101) p))
+                (if (and (not (eq i j)) (<= (/ (random 100001) 1000) p))
                     (let ((w) (edge))
                         (if (not (null weight))
                             (setf w (random (+ 1 weight)))

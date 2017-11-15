@@ -143,10 +143,13 @@
                             (incf progress)
                             (if distance
                                 (setf distance (1- (list-length distance)))
-                                (return (setf unconnected t)))
-                            (setf total-distance (+ total-distance distance))
+                                (progn
+                                    (format t "Não foi possível chegar ao nó ~a a partir do nó ~a.~%" y x)
+                                    (terpri)
+                                    (return (setf unconnected t))))
                             (setf end-time (get-internal-real-time))
                             (setf end-time (- end-time start-time))
+                            (setf total-distance (+ total-distance distance))
                             (setf total-time (+ total-time end-time))
                             (format t "~%Progresso do cálculo da distância+eficiência média: ~,5f%~%" (* 100.0 (/ progress max-num-paths)))
                             (format t "Tempo decorrido em HH:MM:SS: ~d:~2,'0d:~2,'0d~%" (floor (/ total-time 360000)) (rem (floor (/ total-time 60000)) 60) (rem (floor (/ total-time 1000)) 60))

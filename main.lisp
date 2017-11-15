@@ -2,9 +2,10 @@
 (load "tgf-io.lisp")
 (load "metrics.lisp")
 
-(defvar graph (load-tgf "ipv6-2008-12-5374-9426.tgf" :g-type 2))
+;; (defvar graph (load-tgf "ipv6-2008-12-5374-9426.tgf" :g-type 2))
 ;; (defvar graph (load-tgf "tgf.tgf" :g-type 2))
-;; (defvar graph (random-graph 300 1 5))
+(defvar graph (load-tgf "email-Eu-core.txt" :g-type 1 :node-naming nil))
+;; (defvar graph (random-graph 1000 1 2.5))
 
 (print-graph-info graph)
 (format t "Desidade do grafo: ~a" (get-density graph))
