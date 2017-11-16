@@ -1,4 +1,5 @@
 (load "graph.lisp")
+(load "utils.lisp")
 
 ;; "Retorna a lista de adjacência do grafo"
 (defmethod get-adj-list ((g graph))
@@ -83,36 +84,41 @@
 ;; seria aquele que possui menos arestas (ou o que passa por menos nós), 
 ;; desconsiderando o peso. Se quiser o caminho com menor custo de pesos, 
 ;; tente a função lowest-cost-path. Retorna nil se não houver caminho.
-(defmethod shortest-path ((g graph) n1 n2)
-    (let ((parent nil) (unvisited-nodes nil) (visited-nodes nil) (path nil) (found-n2 nil))
+(defmethod shortest-path ((g graph) n1 n2 &optional &key (return-path nil))
+    (let ((parent nil) (unvisited-nodes nil) (path nil) (found-n2 nil) (distance nil))
         (setf parent (make-array (list-length (nodes g)) :initial-element -1))
-        (push n1 unvisited-nodes)
+        (setf distance (make-array (list-length (nodes g)) :initial-element -1))
+        (setf unvisited-nodes (make-queue :head nil :tail nil))
+        (queue-put n1 unvisited-nodes)
         (setf (aref parent n1) n1)
+        (setf (aref distance n1) 0)
         (loop
             (let ((current-node nil))
-                (setf current-node (pop unvisited-nodes))
+                (setf current-node (queue-pop unvisited-nodes))
                 (dolist (e (nth current-node (get-adj-list g)))
                     (let ((neighbor-node nil))
                         (setf neighbor-node (first e))
                         (when (= -1 (aref parent neighbor-node))
-                                (setf (aref parent neighbor-node) current-node))
-                        (when (equal neighbor-node n2)
-                                (setf found-n2 t))
-                        (when (and (not (find neighbor-node visited-nodes)) (not (find neighbor-node unvisited-nodes)))
-                                (setf unvisited-nodes (append unvisited-nodes (list neighbor-node))))))
-                (push current-node visited-nodes)
-                (when (null unvisited-nodes)
+                                (progn
+                                    (setf (aref parent neighbor-node) current-node)
+                                    (setf (aref distance neighbor-node) (1+ (aref distance current-node)))
+                                    (queue-put neighbor-node unvisited-nodes)
+                                    (when (equal neighbor-node n2)
+                                        (return (setf found-n2 t))))))))
+                (when (queue-empty unvisited-nodes)
                     (return nil))
                 (when found-n2
-                    (progn
-                        (push n2 path)
-                        (loop
-                            (let ((node nil))
-                                (setf node (first path))
-                                (when (= node n1)
-                                    (return path))
-                                (push (aref parent node) path)))
-                        (return path)))))))
+                    (if return-path
+                        (progn
+                            (push n2 path)
+                            (loop
+                                (let ((node nil))
+                                    (setf node (first path))
+                                    (when (= node n1)
+                                        (return path))
+                                    (push (aref parent node) path)))
+                            (return path))
+                        (return (aref distance n2)))))))
 
 ;; Retorna a distância média do grafo g. A distância média seria a média das menores distâncias entre os nós
 ;; do grafo sem considerar os pesos, ou seja, considerando apenas a distância em número de arestas ou nós.
@@ -139,22 +145,22 @@
                     (let ((start-time nil) (end-time nil) (distance nil))
                         (setf start-time (get-internal-real-time))
                         (when (not (equal x y))
-                            (setf distance (shortest-path g x y))
+                            (setf distance (shortest-path g x y :return-path t))
                             (incf progress)
-                            (if distance
-                                (setf distance (1- (list-length distance)))
-                                (progn
+                            (when (null distance)
+                               (progn
                                     (format t "Não foi possível chegar ao nó ~a a partir do nó ~a.~%" y x)
                                     (terpri)
                                     (return (setf unconnected t))))
+                            (setf distance (1- (list-length distance)))
                             (setf end-time (get-internal-real-time))
                             (setf end-time (- end-time start-time))
                             (setf total-distance (+ total-distance distance))
                             (setf total-time (+ total-time end-time))
                             (format t "~%Progresso do cálculo da distância+eficiência média: ~,5f%~%" (* 100.0 (/ progress max-num-paths)))
-                            (format t "Tempo decorrido em HH:MM:SS: ~d:~2,'0d:~2,'0d~%" (floor (/ total-time 360000)) (rem (floor (/ total-time 60000)) 60) (rem (floor (/ total-time 1000)) 60))
+                            (format t "Tempo decorrido em HH:MM:SS: ~d:~2,'0d:~2,'0d~%" (floor (/ total-time 3600000)) (rem (floor (/ total-time 60000)) 60) (rem (floor (/ total-time 1000)) 60))
                             (setf etl (* (- max-num-paths progress) (/ total-time progress)))
-                            (format t "Tempo restante estimado em HH:MM:SS: ~d:~2,'0d:~2,'0d~%" (floor (/ etl (* 1000 60 60))) (rem (floor (/ etl (* 1000 60))) 60) (rem (floor (/ etl 1000)) 60))
+                            (format t "Tempo restante estimado em HH:MM:SS: ~d:~2,'0d:~2,'0d~%" (floor (/ etl 3600000)) (rem (floor (/ etl 60000)) 60) (rem (floor (/ etl 1000)) 60))
                             (terpri))))
                 (when unconnected
                     (return nil))))
