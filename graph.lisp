@@ -4,6 +4,9 @@
         (g-type :accessor g-type
             :initform 1
             :initarg :g-type)
+        (weighted :accessor weighted
+            :initform nil
+            :initarg :weighted)
         (node :accessor nodes
             :initform nil
             :initarg :nodes)
@@ -34,22 +37,27 @@
     (setf *random-state* (make-random-state t))
     (let ((g))
         (setf g (make-instance 'graph :g-type type :nodes '() :edges '()))
+        (when weight
+            (setf (weighted g) t))
         (dotimes (i n)
             (push i (nodes g)))
         (dolist (i (nodes g))
             (dolist (j (nodes g))
                 (if (and (not (eq i j)) (<= (/ (random 100001) 1000) p))
                     (let ((w) (edge))
-                        (if (not (null weight))
-                            (setf w (random (+ 1 weight)))
-                            (setf w nil))
+                        (when weight
+                            (setf w (random (+ 1 weight))))
                         (if (= type 1)
                             (progn
-                                (setf edge (list i j w))
+                                (if weight
+                                    (setf edge (list i j w))
+                                    (setf edge (list i j)))
                                 (push edge (edges g)))
                             (if (> j i)
                                 (progn
-                                    (setf edge (list i j w))
+                                    (if weight
+                                        (setf edge (list i j w))
+                                        (setf edge (list i j)))
                                     (push edge (edges g)))))))))
         g))
 

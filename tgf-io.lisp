@@ -1,9 +1,9 @@
 (load "graph.lisp")
 
-(defun load-tgf (file-name &optional &key (g-type 1) (node-naming t))
+(defun load-tgf (file-name &optional &key (g-type 1) (nodes-first t) (weighted nil))
     (let ((in) (graph) (nodes) (edges) (current-list))
         (setf in (open file-name :if-does-not-exist nil))
-        (setf graph (make-instance 'graph :g-type g-type))
+        (setf graph (make-instance 'graph :g-type g-type :weighted nil))
         (setf current-list 1)
         (when in
             (loop for line = (read-line in nil)
@@ -11,7 +11,7 @@
                     (progn
                         (let ((e))
                             (setf e (split-str line " "))
-                            (if node-naming
+                            (if nodes-first
                                 (if (string= (first e) "#")
                                     (setf current-list 2)
                                     (if (= current-list 1)
@@ -19,6 +19,8 @@
                                         (push (mapcar #'parse-integer e) edges)))
                                 (let ((edge nil))
                                     (setf edge (mapcar #'parse-integer e))
+                                    (when (not weighted)
+                                        (setf edge (remove (first (last edge)) edge)))
                                     (when (not (find (first edge) nodes))
                                         (push (first edge) nodes))
                                     (when (not (find (second edge) nodes))
@@ -29,6 +31,26 @@
         (setf (edges graph) edges)
         (setf (g-type graph) g-type)
         graph))
+
+(defun save-tgf (file-name g &optional &key (nodes-first t))
+    (let ((data nil) (file nil))
+        (dolist (e (edges g))
+            (push e data))
+        (when nodes-first
+            (progn
+                (push "#" data)
+                (dolist (n (nodes g))
+                    (push n data))))
+        (setf file (open file-name :direction :output :if-exists :supersede))
+        (dolist (d data)
+            (if (listp d)
+                (progn
+                    (format file "~a ~a" (first d) (second d))
+                    (when (weighted g)
+                        (format file " ~a" (third d)))
+                    (format file "~%"))
+                (format file "~a~%" d)))
+        (close file)))
 
 ;; Funções para separar uma string, dado uma string "separadora"
 ;; Retirado de: https://gist.github.com/siguremon/1174988
