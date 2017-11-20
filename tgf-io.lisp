@@ -1,35 +1,49 @@
 (load "graph.lisp")
+(load "utils.lisp")
 
-(defun load-tgf (file-name &optional &key (g-type 1) (nodes-first t) (weighted nil))
-    (let ((in) (graph) (nodes) (edges) (current-list))
+(defun load-tgf (file-name &optional &key (g-type 1) (nodes-first t) (weighted nil) (separator " "))
+    (let ((in nil) (graph nil) (current-list nil))
         (setf in (open file-name :if-does-not-exist nil))
-        (setf graph (make-instance 'graph :g-type g-type :weighted nil))
+        (setf graph (empty-graph g-type weighted))
         (setf current-list 1)
         (when in
             (loop for line = (read-line in nil)
                 while line do 
                     (progn
-                        (let ((e))
-                            (setf e (split-str line " "))
-                            (if nodes-first
-                                (if (string= (first e) "#")
-                                    (setf current-list 2)
-                                    (if (= current-list 1)
-                                        (push (parse-integer (first e)) nodes)
-                                        (push (mapcar #'parse-integer e) edges)))
-                                (let ((edge nil))
-                                    (setf edge (mapcar #'parse-integer e))
-                                    (when (not weighted)
-                                        (setf edge (remove (first (last edge)) edge)))
-                                    (when (not (find (first edge) nodes))
-                                        (push (first edge) nodes))
-                                    (when (not (find (second edge) nodes))
-                                        (push (second edge) nodes))
-                                    (push edge edges))))))
+                        (let ((e nil))  
+                            (when (not (string= (char line 0) "#"))
+                                (setf e (split-str line separator))
+                                (if nodes-first      
+                                    (progn
+                                        (when (> (list-length e) 1)
+                                            (setf current-list 2))
+                                        (if (= current-list 1)
+                                            (let ((node nil))
+                                                (setf node (parse-integer (car e)))
+                                                (add-node graph :node-id node))
+                                            (let ((weight nil) (node1 nil) (node2 nil) (edge nil))
+                                                (setf edge (mapcar #'parse-integer e))
+                                                (loop for element in edge and i from 0 do
+                                                    (case i
+                                                        (0 (setf node1 element))
+                                                        (1 (setf node2 element))
+                                                        (2 (setf weight element))))
+                                                (setf edge (list node1 node2))
+                                                (add-edge graph edge :weight weight))))
+                                    (let ((weight nil) (node1 nil) (node2 nil) (edge nil))
+                                        (setf edge (mapcar #'parse-integer e))
+                                        (loop for element in edge and i from 0 do
+                                            (case i
+                                                (0 (setf node1 element))
+                                                (1 (setf node2 element))
+                                                (2 (setf weight element))))
+                                        (setf edge (list node1 node2))
+                                        (when (not (nodep graph node1))
+                                            (add-node graph :node-id node1))
+                                        (when (not (nodep graph node2))
+                                            (add-node graph :node-id node2))
+                                        (add-edge graph edge :weight weight)))))))
             (close in))
-        (setf (nodes graph) nodes)
-        (setf (edges graph) edges)
-        (setf (g-type graph) g-type)
         graph))
 
 (defun save-tgf (file-name g &optional &key (nodes-first t))
@@ -51,17 +65,3 @@
                     (format file "~%"))
                 (format file "~a~%" d)))
         (close file)))
-
-;; Funções para separar uma string, dado uma string "separadora"
-;; Retirado de: https://gist.github.com/siguremon/1174988
-(defun split-str (string &optional (separator " "))
-  (split-str-1 string separator))
-
-(defun split-str-1 (string &optional (separator " ") (r nil))
-  (let ((n (position separator string
-		     :from-end t
-		     :test #'(lambda (x y)
-			       (find y x :test #'string=)))))
-    (if n
-	    (split-str-1 (subseq string 0 n) separator (cons (subseq string (1+ n)) r))
-        (cons string r))))
