@@ -2,12 +2,12 @@
 (load "tgf-io.lisp")
 (load "metrics.lisp")
 
-(defvar graph (load-tgf "ipv6-2008-12-5374-9426.tgf" :g-type 2))
+(defvar graph (load-tgf "ipv6-2008-12-5374-9426.tgf" 1:g-type 2))
 ;; (defvar graph (load-tgf "arquivo-salvo.tgf" :g-type 2))
 ;; (defvar graph (load-tgf "tgf.tgf" :g-type 2))
-;; (defvar graph (load-tgf "email-Eu-core.txt" :g-type 1 :nodes-first nil))
+;; (defvar graph (load-tgf "email-Eu-core.txt" :g-type 2 :nodes-first nil))
 ;; (defvar graph (load-tgf "facebook_combined.txt" :g-type 2 :nodes-first nil))
-;; (defvar graph (random-graph 10 2 50))
+;; (defvar graph (random-graph 20000 2 0.1))
 
 (print-graph-info graph)
 ;; (print-graph-info graph :full-print t)
@@ -18,5 +18,3 @@
 (terpri)
 (format t "Distância média do grafo: ~a" (average-distance graph :verbose t))
 (terpri)
-;; (format t "Menor distância dos nós: ~a" (get-distances graph 0))
-;; (terpri)

@@ -1,3 +1,4 @@
+;; Implementação de uma fila simples em LISP e suas funções de suporte
 (defstruct queue
     head
     tail)
@@ -38,3 +39,35 @@
                     (when (null current-block)
                         (return (reverse q-list)))))
             nil)))
+
+;; Imprime um texto humanamente legível sobre o progresso de um algoritmo
+(defun print-progress (steps steps-total time-per-step &optional &key (process-name nil))
+    (let ((elapsed-time nil) (etl nil) (steps-left nil) (out nil))
+        (setf elapsed-time (* steps time-per-step))
+        (setf steps-left (- steps-total steps))
+        (setf etl (* time-per-step steps-left))
+        (format t "~%Progresso~a: ~,5f%~%" (if process-name (format nil " de ~a" process-name) "") (* 100.0 (/ steps steps-total)))
+        (format t "Tempo decorrido em HH:MM:SS: ~d:~2,'0d:~2,'0d~%" (floor (/ elapsed-time 3600000)) (rem (floor (/ elapsed-time 60000)) 60) (rem (floor (/ elapsed-time 1000)) 60))
+        (format t "Tempo restante estimado em HH:MM:SS: ~d:~2,'0d:~2,'0d~%" (floor (/ etl 3600000)) (rem (floor (/ etl 60000)) 60) (rem (floor (/ etl 1000)) 60))
+        (terpri)))
+
+;; Funções para separar uma string, dado uma string "separadora"
+;; Retirado de: https://gist.github.com/siguremon/1174988
+(defun split-str (string &optional (separator " "))
+  (split-str-1 string separator))
+
+(defun split-str-1 (string &optional (separator " ") (r nil))
+  (let ((n (position separator string
+		     :from-end t
+		     :test #'(lambda (x y)
+			       (find y x :test #'string=)))))
+    (if n
+	    (split-str-1 (subseq string 0 n) separator (cons (subseq string (1+ n)) r))
+        (cons string r))))
+
+;; Return a new list of the N cars of 'list'
+(defun nthcar (n list)
+    (let ((new-list nil))
+        (loop for i from 1 to n and e in list do
+            (push e new-list))
+        (reverse new-list)))
