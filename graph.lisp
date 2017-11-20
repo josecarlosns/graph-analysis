@@ -10,6 +10,7 @@
 ;;             "average-efficiency" -> the average efficiency of the graph.
 ;;             "expected-degree" -> the expected degree of the graph.
 ;;             "node-ids" -> a list of node IDs for the graph.
+;;             "diameter" -> the diameter of the graph (longest of all shortest paths)
 ;;             "number-of-nodes" -> the number of nodes.
 ;;             "number-of-edges" -> the number of edges.
 ;;     Node -> a hash-table were in the pair (key value) the key is the ID of the node and the value is actually
@@ -49,10 +50,7 @@
 (defmethod random-graph (number-of-nodes type edge-prob &optional &key (weight-range nil))
     (setf *random-state* (make-random-state t))
     (let ((graph nil))
-        (setf graph (make-instance 'graph))
-        (setf (gethash "type" (properties graph)) type)
-        (setf (gethash "weighted" (properties graph)) (if weight-range t nil))
-        (setf (gethash "number-of-nodes" (properties graph)) 0)
+        (setf graph (empty-graph type (if weight-range t nil)))
         (dotimes (node1 number-of-nodes)
             (when (null (gethash node1 (nodes graph)))
                 (add-node graph :node-id node1))
@@ -61,14 +59,31 @@
                     (setf node2 (if (= 1 type) j (+ j node1)))
                     (when (null (gethash node2 (nodes graph)))
                         (add-node graph :node-id node2))
-                    (when (and (not (= node1 node2)) (<= (/ (random 100001) 1000) edge-prob))
+                    (when (and (not (= 0 edge-prob)) (not (= node1 node2)) (<= (/ (random 100001) 1000) edge-prob))
                             (progn
+                                (setf edge (list node1 node2))
                                 (when weight-range 
                                     (setf weight (random (+ 1 weight-range))))
-                                (setf edge (list node1 node2))
-                                (add-edge graph edge :weight weight))))))
+                                (add-edge graph edge))))))
         graph))
 
+;; Returns an empty graph of the given type and weighted if weighted=t
+(defmethod empty-graph (type weighted)
+    (let ((graph nil))
+        (setf graph (make-instance 'graph))
+        (setf (gethash "type" (properties graph)) type)
+        (setf (gethash "weighted" (properties graph)) weighted)
+        (setf (gethash "number-of-nodes" (properties graph)) 0)
+        (setf (gethash "number-of-edges" (properties graph)) 0)
+        graph))
+
+;; Returns t if the graph 'g' contains the node 'node-id', nil if otherwise
+(defmethod nodep ((g graph) node-id)
+    (if (gethash node-id (nodes g)) t nil))
+
+;; Returns t if the graph 'g' contains the edge 'edge', nil if otherwise
+(defmethod edgep ((g graph) edge)
+    (if (gethash edge (edges g)) t nil))
 
 ;; Adds the given node to graph
 ;;     Parameters:
@@ -82,7 +97,7 @@
     (let ((new-node nil))
         (if node-id
             (setf new-node node-id)
-            (setf new-node (gethash "number-of-nodes" (properties g))))
+            (setf new-node (1+ (gethash "number-of-nodes" (properties g)))))
         (push new-node (gethash "node-ids" (properties g)))
         (incf (gethash "number-of-nodes" (properties g)))
         (setf (gethash new-node (nodes g)) (make-hash-table :test #'equal))
