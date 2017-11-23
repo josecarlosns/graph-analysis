@@ -46,22 +46,6 @@
             (close in))
         graph))
 
+;; TODO
 (defun save-tgf (file-name g &optional &key (nodes-first t))
-    (let ((data nil) (file nil))
-        (dolist (e (edges g))
-            (push e data))
-        (when nodes-first
-            (progn
-                (push "#" data)
-                (dolist (n (nodes g))
-                    (push n data))))
-        (setf file (open file-name :direction :output :if-exists :supersede))
-        (dolist (d data)
-            (if (listp d)
-                (progn
-                    (format file "~a ~a" (first d) (second d))
-                    (when (weighted g)
-                        (format file " ~a" (third d)))
-                    (format file "~%"))
-                (format file "~a~%" d)))
-        (close file)))
+    )

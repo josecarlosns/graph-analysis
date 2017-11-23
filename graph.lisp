@@ -10,23 +10,24 @@
 ;;             "average-efficiency" -> the average efficiency of the graph.
 ;;             "expected-degree" -> the expected degree of the graph.
 ;;             "node-ids" -> a list of node IDs for the graph.
-;;             "diameter" -> the diameter of the graph (longest of all shortest paths)
+;;             "diameter" -> the diameter of the graph (longest of all shortest paths).
 ;;             "number-of-nodes" -> the number of nodes.
 ;;             "number-of-edges" -> the number of edges.
+;;             "altered" -> true if the graph has been altered since its last analysis.
 ;;     Node -> a hash-table were in the pair (key value) the key is the ID of the node and the value is actually
 ;;     another hash table whose keys are labels to properties of the node.
 ;;         Keys:
 ;;             "label" -> the label of the node.
-;;             "eficiency" -> the eficiency of the node.
-;;             "vulnerability" -> the vulnerability of the node.
 ;;             "distances" -> an array holding the distances of this node to all other nodes.
 ;;             "bfs-tree" -> the BFS (breath-first search) search tree as an array, with this node as root.
 ;;             "edges" -> an list holding all the edges that comes from this node.
 ;;             "degree" -> a pair (OUT IN) of degrees for the node. 
+;;             "active" -> nil if the node has been deactivated temporarily, for calculations of vulnerability, for example. Default is true.
 ;;     Edges -> a hash-table were in the pair (key value) the key is the pair (nodeout nodein) of the edge and the value is actually
 ;;     another hash table whose keys are labels to properties of the edge.
 ;;         Keys:
 ;;             "weight" -> the weight of the node.
+;;             "active" -> nil if the edge has been deactivated temporarily, for calculations of vulnerability, for example. Default is true.
 (defclass graph ()
     (
         (properties :accessor properties
@@ -101,6 +102,8 @@
         (push new-node (gethash "node-ids" (properties g)))
         (incf (gethash "number-of-nodes" (properties g)))
         (setf (gethash new-node (nodes g)) (make-hash-table :test #'equal))
+        (setf (gethash "active" (gethash new-node (nodes g))) t)
+        (setf (gethash "altered" (properties g)) t)
         (when label
             (setf (gethash "label" (gethash new-node (nodes g))) label))
         new-node))
@@ -120,10 +123,39 @@
         (when (= 2 (gethash "type" (properties g)))
             (push new-edge (gethash "edges" (gethash (second new-edge) (nodes g)))))
         (setf (gethash edge (edges g)) (make-hash-table :test #'equal))
+        (setf (gethash "active" (gethash edge (edges g))) t)
         (when weight
             (setf (gethash "weight" (gethash edge (edges g))) weight))
         (incf (gethash "number-of-edges" (properties g)))
+        (setf (gethash "altered" (properties g)) t)
         new-edge))
+
+;; Removes the given edge from the graph
+(defmethod remove-edge ((g graph) edge)
+    (let ((node1-edges nil) (node2-edges nil))
+        (setf node1-edges (gethash "edges" (gethash (first edge) (nodes g))))
+        (setf node1-edges (remove edge node1-edges))
+        (setf (gethash "edges" (gethash (first edge) (nodes g))) node1-edges)
+        (when (= 2 (gethash "type" (properties g)))
+            (progn
+                (setf node2-edges (gethash "edges" (gethash (second edge) (nodes g))))
+                (setf node2-edges (remove edge node2-edges))
+                (setf (gethash "edges" (gethash (second edge) (nodes g))) node2-edges)))
+        (setf (gethash edge (edges g)) nil)
+        (decf (gethash "number-of-edges" (properties g)))
+        (setf (gethash "altered" (properties g)) t)))
+
+;; Removes the given node and all its associated edges from the graph
+(defmethod remove-node ((g graph) node)
+    (dolist (edge (gethash "edges" (gethash node (nodes g))))
+        (remove-edge g edge))
+    (setf (gethash node (nodes g)) nil)
+    (let ((node-ids nil))
+        (setf node-ids (gethash "node-ids" (properties g)))
+        (setf node-ids (remove node node-ids))
+        (setf (gethash "node-ids" (properties g)) node-ids))
+    (decf (gethash "number-of-nodes" (properties g)))
+    (setf (gethash "altered" (properties g)) t))
 
 ;; Prints information about the given graph, like number of nodes and edges, to the given stream. 
 ;; If verbose, then it will print adicional information like average distance, eficiency etc.
