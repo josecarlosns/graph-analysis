@@ -22,12 +22,11 @@
 ;;             "bfs-tree" -> the BFS (breath-first search) search tree as an array, with this node as root.
 ;;             "edges" -> an list holding all the edges that comes from this node.
 ;;             "degree" -> a pair (OUT IN) of degrees for the node. 
-;;             "active" -> nil if the node has been deactivated temporarily, for calculations of vulnerability, for example. Default is true.
+;;             "vulnerability" -> the vulnerability of the node
 ;;     Edges -> a hash-table were in the pair (key value) the key is the pair (nodeout nodein) of the edge and the value is actually
 ;;     another hash table whose keys are labels to properties of the edge.
 ;;         Keys:
 ;;             "weight" -> the weight of the node.
-;;             "active" -> nil if the edge has been deactivated temporarily, for calculations of vulnerability, for example. Default is true.
 (defclass graph ()
     (
         (properties :accessor properties
@@ -102,7 +101,6 @@
         (push new-node (gethash "node-ids" (properties g)))
         (incf (gethash "number-of-nodes" (properties g)))
         (setf (gethash new-node (nodes g)) (make-hash-table :test #'equal))
-        (setf (gethash "active" (gethash new-node (nodes g))) t)
         (setf (gethash "altered" (properties g)) t)
         (when label
             (setf (gethash "label" (gethash new-node (nodes g))) label))
@@ -123,7 +121,6 @@
         (when (= 2 (gethash "type" (properties g)))
             (push new-edge (gethash "edges" (gethash (second new-edge) (nodes g)))))
         (setf (gethash edge (edges g)) (make-hash-table :test #'equal))
-        (setf (gethash "active" (gethash edge (edges g))) t)
         (when weight
             (setf (gethash "weight" (gethash edge (edges g))) weight))
         (incf (gethash "number-of-edges" (properties g)))

@@ -8,7 +8,7 @@
 ;; Sets and returns an pair (X Y) where:
 ;;     x -> the degree out of the node
 ;;     y -> the degree in of the node
-(defmethod degree ((g graph) node)
+(defmethod degree ((g graph) node)  
     (if (not (gethash "altered" (properties g)))
         (gethash "degree" (gethash node (nodes g)))
         (let ((ad-list nil) (degree nil))
@@ -144,7 +144,7 @@
                 (setf bfs-tree (bfs-search g x))
                 (setf end-time (get-internal-real-time))
                 (setf end-time (- end-time start-time))
-                (setf total-time (+ total-time end-time))
+                (incf total-time end-time)
                 (incf progress)
                 (setf distance-array (first bfs-tree))
                 (setf bfs-tree (second bfs-tree))
@@ -165,7 +165,7 @@
                                     (return (setf unconnected t))))
                             (when (> distance diameter)
                                 (setf diameter distance))
-                            (setf total-distance (+ total-distance distance)))))
+                            (incf total-distance distance))))
                 (when unconnected
                     (return nil))))
         (if unconnected
