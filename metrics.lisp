@@ -105,8 +105,8 @@
 ;; Run an analysis on the graph g, to get its metrics. If verbose it will print information about what metrics its
 ;; currently working on and the progress of the algorithm
 (defmethod run-analysis ((g graph) &optional &key (verbose nil))
-    (let ((diameter nil) (total-distance nil) (progress nil) (max-num-paths nil) (distances nil) (total-time nil)
-            (parents nil) (density nil) (expt-degree nil) (type nil) (num-nodes nil) (unconnected nil)) 
+    (let ((diameter nil) (total-distance nil) (progress nil) (max-num-paths nil) (total-time nil)
+           (density nil) (expt-degree nil) (type nil) (num-nodes nil) (unconnected nil)) 
         (setf progress 0)
         (setf total-distance 0)
         (setf num-nodes (gethash "number-of-nodes" (properties g)))
@@ -116,8 +116,6 @@
             (setf max-num-paths (/ max-num-paths 2)))
         (setf total-time 0)
         (setf diameter 0)
-        (setf distances (make-array num-nodes))
-        (setf parents (make-array num-nodes))
 
         (setf density (density g))
         (setf expt-degree (expt-degree g))
@@ -129,13 +127,11 @@
                 (incf progress)
                 (setf distance-array (first bfs-tree))
                 (setf bfs-tree (second bfs-tree))
-                (setf (aref distances node1) distance-array)
-                (setf (aref parents node1) bfs-tree)
                 (dotimes (y (if (= 2 type) (- num-nodes node1) num-nodes))
                     (let ((distance nil) (node2 nil))
                         (setf node2 (if (= 2 type) (+ y node1) y))
                         (when (not (equal node1 node2))
-                            (setf distance (aref (aref distances node1) node2))
+                            (setf distance (aref distance-array node2))
                             (when (= -1 distance)
                             (progn
                                 (when verbose
@@ -162,6 +158,4 @@
                 (setf (gethash "average-efficiency" (properties g)) (float (/ 1 total-distance)))
                 (setf (gethash "density" (properties g)) density)
                 (setf (gethash "expected-degree" (properties g)) expt-degree)
-                (setf (gethash "distances" (properties g)) distances)
-                (setf (gethash "parents" (properties g)) parents)
                 t))))
