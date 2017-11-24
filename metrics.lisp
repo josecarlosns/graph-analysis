@@ -121,7 +121,7 @@
         (setf expt-degree (expt-degree g))
 
         (dotimes (node1 num-nodes)
-            (let ((bfs-tree nil) (distance-array nil) (start-time nil) (end-time nil) (rest-nodes nil))
+            (let ((bfs-tree nil) (distance-array nil) (start-time nil) (end-time nil))
                 (setf start-time (get-internal-real-time))
                 (setf bfs-tree (bfs-search g node1))
                 (incf progress)
