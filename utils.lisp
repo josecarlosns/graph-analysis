@@ -42,7 +42,7 @@
 
 ;; Imprime um texto humanamente legível sobre o progresso de um algoritmo
 (defun print-progress (steps steps-total time-per-step &optional &key (process-name nil))
-    (let ((elapsed-time nil) (etl nil) (steps-left nil) (out nil))
+    (let ((elapsed-time nil) (etl nil) (steps-left nil))
         (setf elapsed-time (* steps time-per-step))
         (setf steps-left (- steps-total steps))
         (setf etl (* time-per-step steps-left))
@@ -53,9 +53,6 @@
 
 ;; Funções para separar uma string, dado uma string "separadora"
 ;; Retirado de: https://gist.github.com/siguremon/1174988
-(defun split-str (string &optional (separator " "))
-  (split-str-1 string separator))
-
 (defun split-str-1 (string &optional (separator " ") (r nil))
   (let ((n (position separator string
 		     :from-end t
@@ -64,6 +61,9 @@
     (if n
 	    (split-str-1 (subseq string 0 n) separator (cons (subseq string (1+ n)) r))
         (cons string r))))
+
+(defun split-str (string &optional (separator " "))
+  (split-str-1 string separator))
 
 ;; Return a new list of the N cars of 'list'
 (defun nthcar (n list)
