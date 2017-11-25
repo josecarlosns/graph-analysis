@@ -1,4 +1,4 @@
-;; (load "metrics.lisp")
+;; (load "metrics.lis   p")
 ;; Class that represents a graph, it has 3 properites:
 ;;     Properties -> a hash-table were in the pair (key value) the key is a label of a property of the graph
 ;;     and its value is the current value of the property.
@@ -28,12 +28,11 @@
 ;;                     y1 -> the parent node of x1 who is closest in distance to x.
 ;;     Edges -> a list of all the edges of the graph
 (defclass graph ()
-    (
-        (properties :accessor properties
-            :initform (make-hash-table :test #'equal))
-        (edge :accessor edges
-            :initform nil
-            :initarg :edges)))
+    ((properties :accessor properties
+        :initform (make-hash-table :test #'equal))
+    (edge :accessor edges
+        :initform nil
+        :initarg :edges)))
 
 ;; Returns an empty graph of the given type and weighted if weighted=t
 (defmethod empty-graph (type weighted)
@@ -80,7 +79,8 @@
             (format stream "Average distance: ~1,4f~%" (gethash "average-distance" (properties g)))
             (format stream "Average efficiency: ~1,4f~%" (gethash "average-efficiency" (properties g)))
             (format stream "Density: ~1,2f%~%" (* 100 (gethash "density" (properties g))))
-            (format stream "Expected degree (OUT IN): ~1,2f~%" (gethash "expected-degree" (properties g))))))
+            (format stream "Expected degree (OUT IN): ~a~%" (gethash "expected-degree" (properties g)))
+            (format stream "Diameter: ~1,2f~%" (gethash "diameter" (properties g))))))
 
 ;; Creates an random graph with the given number of nodes, type, probability of existing edge and random weight, if any.
 ;;     Parameters:

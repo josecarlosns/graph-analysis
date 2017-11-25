@@ -149,8 +149,7 @@
                 (when unconnected
                     (return nil))))
         (if unconnected
-            (progn
-                nil)
+            nil
             (progn
                 (setf total-distance (float (/ total-distance max-num-paths)))
                 (setf (gethash "diameter" (properties g)) diameter) 
