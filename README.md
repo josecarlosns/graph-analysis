@@ -18,4 +18,3 @@ LISP code for graph analysis, including many implementations of Graph Theory alg
 
 - Does not support unconnected graphs.
 - Does not process user input on main.lisp, which leads to crashes.
-- Too much time to generate graphs (maybe instead of testing each possible edge for p chance of linking, it might choose p% of nodes to link?)
