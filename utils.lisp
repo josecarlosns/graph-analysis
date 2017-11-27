@@ -41,15 +41,17 @@
             nil)))
 
 ;; Imprime um texto humanamente legível sobre o progresso de um algoritmo
-(defun print-progress (steps steps-total time-per-step &optional &key (process-name nil))
+(defun print-progress (steps steps-total time-per-step)
     (let ((elapsed-time nil) (etl nil) (steps-left nil))
         (setf elapsed-time (* steps time-per-step))
         (setf steps-left (- steps-total steps))
         (setf etl (* time-per-step steps-left))
-        (format t "~%Progress~a: ~,5f%~%" (if process-name (format nil " of ~a" process-name) "") (* 100.0 (/ steps steps-total)))
-        (format t "Elapsed time in HH:MM:SS: ~d:~2,'0d:~2,'0d~%" (floor (/ elapsed-time 3600000)) (rem (floor (/ elapsed-time 60000)) 60) (rem (floor (/ elapsed-time 1000)) 60))
-        (format t "ETL: ~d:~2,'0d:~2,'0d~%" (floor (/ etl 3600000)) (rem (floor (/ etl 60000)) 60) (rem (floor (/ etl 1000)) 60))
-        (terpri)))
+        (format t "~a~,5f%~t~d:~2,'0d:~2,'0d~t~d:~2,'0d:~2,'0d" 
+            #\return
+            (* 100.0 (/ steps steps-total))
+            (floor (/ elapsed-time 3600000)) (rem (floor (/ elapsed-time 60000)) 60) (rem (floor (/ elapsed-time 1000)) 60)
+            (floor (/ etl 3600000)) (rem (floor (/ etl 60000)) 60) (rem (floor (/ etl 1000)) 60))
+        (finish-output)))
 
 ;; Funções para separar uma string, dado uma string "separadora"
 ;; Retirado de: https://gist.github.com/siguremon/1174988
