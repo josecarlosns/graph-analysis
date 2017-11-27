@@ -41,9 +41,9 @@
             nil)))
 
 ;; Imprime um texto humanamente legível sobre o progresso de um algoritmo
-(defun print-progress (steps steps-total time-per-step)
-    (let ((elapsed-time nil) (etl nil) (steps-left nil))
-        (setf elapsed-time (* steps time-per-step))
+(defun print-progress (steps steps-total elapsed-time)
+    (let ((time-per-step nil) (etl nil) (steps-left nil))
+        (setf time-per-step (/ elapsed-time steps))
         (setf steps-left (- steps-total steps))
         (setf etl (* time-per-step steps-left))
         (format t "~aProgress: ~,5f%~tElapsed time: ~d:~2,'0d:~2,'0d~tETL: ~d:~2,'0d:~2,'0d" 

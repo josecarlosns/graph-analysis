@@ -52,7 +52,7 @@
                 (decf end-time start-time)
                 (incf total-time end-time)
                 (when verbose
-                    (print-progress (1+ node1) number-of-nodes (/ total-time (1+ node1))))))
+                    (print-progress (1+ node1) number-of-nodes total-time))))
         (when verbose
             (progn
                 (terpri)
@@ -102,7 +102,7 @@
                 (setf end-time (decf end-time start-time))
                 (incf total-time end-time)
                 (when verbose
-                    (print-progress i (* 2 number-of-nodes) (/ total-time (1+ i))))))
+                    (print-progress (1+ i) (* 2 number-of-nodes) total-time))))
         (dotimes (i number-of-nodes)
             (let ((start-time nil) (end-time nil))
                 (setf start-time (get-internal-real-time))
@@ -113,7 +113,7 @@
                 (setf end-time (decf end-time start-time))
                 (incf total-time end-time))
                 (when verbose
-                    (print-progress (+ number-of-nodes (1+ i)) (* 2 number-of-nodes) (/ total-time (+ number-of-nodes (1+ i))))))
+                    (print-progress (+ number-of-nodes (1+ i)) (* 2 number-of-nodes) total-time)))
         (when verbose
             (progn
                 (terpri)
@@ -220,7 +220,7 @@
                 (incf total-time end-time)
                 (when verbose
                     (progn
-                        (print-progress progress num-nodes (/ total-time progress))))))
+                        (print-progress (1+ progress) num-nodes total-time)))))
         (if unconnected
             nil
             (progn
