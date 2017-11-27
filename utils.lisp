@@ -46,7 +46,7 @@
         (setf elapsed-time (* steps time-per-step))
         (setf steps-left (- steps-total steps))
         (setf etl (* time-per-step steps-left))
-        (format t "~a~,5f%~t~d:~2,'0d:~2,'0d~t~d:~2,'0d:~2,'0d" 
+        (format t "~aProgress: ~,5f%~tElapsed time: ~d:~2,'0d:~2,'0d~tETL: ~d:~2,'0d:~2,'0d" 
             #\return
             (* 100.0 (/ steps steps-total))
             (floor (/ elapsed-time 3600000)) (rem (floor (/ elapsed-time 60000)) 60) (rem (floor (/ elapsed-time 1000)) 60)
