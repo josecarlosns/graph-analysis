@@ -8,11 +8,15 @@ LISP code for graph analysis, including many implementations of Graph Theory alg
 - Add an ASDF system definition after it is stable enough to be used by others
     - Then make it available in Quicklisp or some other CLisp package manager maybe?
 - Optimize the code.
-- Support for various different types of TGF formats.
+- Support for various different types of TGF formats (loading and saving).
 - Add support for non-sequential node-ids, labels (weights, descriptions etc.) to nodes and edges.
 - Support for graph editing operations.
 - Use structures instead of CLOS maybe?
 - Add multithreading for better performance
+- Algorithms:
+    - Vulnerability.
+    - Clustering coeficient (local and global).
+    - Strong and weak connected component.
 
 ## Issues
 

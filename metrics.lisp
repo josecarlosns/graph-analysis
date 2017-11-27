@@ -15,7 +15,7 @@
                     (push node1 (aref adj-list node2)))))
         adj-list))
 
-;; Sets and returns the density of the graph
+;; Returns the density of the graph
 (defmethod density ((g graph))
     (let ((num-of-nodes nil) (num-of-edges nil))
         (setf num-of-nodes (gethash "number-of-nodes" (properties g)))
@@ -126,7 +126,7 @@
                 (list expt-degree degree-dist-out degree-dist-in))
             (list (/ expt-degree number-of-nodes) degree-dist-out))))
 
-;; Sets and returns the distances array and the bfs-tree for the graph given the origin point as the node origin
+;; Returns the distances and parents array and the bfs-tree for the graph given the origin point as the node origin
 (defmethod bfs-search ((g graph) origin)
     (let ((distances nil) (bfs-tree nil) (unvisited-nodes nil) (adj-list nil))
         (setf bfs-tree (make-array (gethash "number-of-nodes" (properties g)) :initial-element -1))
@@ -147,14 +147,6 @@
                             (queue-put neighbor-node unvisited-nodes)))))
                 (when (queue-empty unvisited-nodes)
                     (return (list distances bfs-tree))))))
-
-;; Vulnerability: TODO
-;; (defmethod vulnerability ((g graph) node &optional &key (verbose nil))
-;;     (let ((current-eff nil) (new-eff nil))
-;;         (setf current-eff (run-analysis g :verbose verbose))
-;;         (remove-node g node)
-;;         (setf new-eff (run-analysis g :verbose verbose))
-;;         (float (- new-eff current-eff))))
 
 ;; Run an analysis on the graph g, to get its metrics. If verbose it will print information about what metrics its
 ;; currently working on and the progress of the algorithm
