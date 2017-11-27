@@ -1,4 +1,4 @@
-;; (load "metrics.lis   p")
+;; (load "metrics.lisp")
 ;; Class that represents a graph, it has 3 properites:
 ;;     Properties -> a hash-table were in the pair (key value) the key is a label of a property of the graph
 ;;     and its value is the current value of the property.
@@ -14,18 +14,7 @@
 ;;             "number-of-nodes" -> the number of nodes.
 ;;             "number-of-edges" -> the number of edges.
 ;;             "adj-list" -> the adjacency list used to represent the graph. Used as parameter by most algorithms.
-;;             "distances" -> an array containing the distances from an node origin to all other nodes, it has an format
-;;             a(x)=y, where: 
-;;                 x -> the origin node.
-;;                 y -> another array b(x1)=y1, where:
-;;                     x1 -> the destination node.
-;;                     y1 -> the shortest distance between x and y1 in number of edges crossed.
-;;             "parents" -> an array containing the parents from an node origin to all other nodes, it has an format
-;;             a(x)=y, where: 
-;;                 x -> the origin node.
-;;                 y -> another array b(x1)=y1, where:
-;;                     x1 -> the destination node.
-;;                     y1 -> the parent node of x1 who is closest in distance to x.
+;;             "degree-dist" -> the degree distribution of the graph.
 ;;     Edges -> a list of all the edges of the graph
 (defclass graph ()
     ((properties :accessor properties
@@ -79,8 +68,11 @@
             (format stream "Average distance: ~1,4f~%" (gethash "average-distance" (properties g)))
             (format stream "Average efficiency: ~1,4f~%" (gethash "average-efficiency" (properties g)))
             (format stream "Density: ~1,2f%~%" (* 100 (gethash "density" (properties g))))
-            (format stream "Expected degree (OUT IN): ~a~%" (gethash "expected-degree" (properties g)))
-            (format stream "Diameter: ~1,2f~%" (gethash "diameter" (properties g))))))
+            (format stream "Expected degree ( OUT IN ): ~{~f ~}~%" (gethash "expected-degree" (properties g)))
+            (format stream "Diameter: ~1,2f~%" (gethash "diameter" (properties g)))
+            (format stream "Degree distribution: Degree=(outcoming incoming)~%")
+            (loop for prob in (gethash "degree-dist" (properties g)) do
+                (format stream "~t~t~t~d=(~3,4f% ~3,4f%)~%" (first prob) (float (* 100 (second prob))) (float (* 100 (third prob))))))))
 
 ;; Creates an random graph with the given number of nodes, type, probability of existing edge and random weight, if any.
 ;;     Parameters:

@@ -46,9 +46,9 @@
         (setf elapsed-time (* steps time-per-step))
         (setf steps-left (- steps-total steps))
         (setf etl (* time-per-step steps-left))
-        (format t "~%Progresso~a: ~,5f%~%" (if process-name (format nil " de ~a" process-name) "") (* 100.0 (/ steps steps-total)))
-        (format t "Tempo decorrido em HH:MM:SS: ~d:~2,'0d:~2,'0d~%" (floor (/ elapsed-time 3600000)) (rem (floor (/ elapsed-time 60000)) 60) (rem (floor (/ elapsed-time 1000)) 60))
-        (format t "Tempo restante estimado em HH:MM:SS: ~d:~2,'0d:~2,'0d~%" (floor (/ etl 3600000)) (rem (floor (/ etl 60000)) 60) (rem (floor (/ etl 1000)) 60))
+        (format t "~%Progress~a: ~,5f%~%" (if process-name (format nil " of ~a" process-name) "") (* 100.0 (/ steps steps-total)))
+        (format t "Elapsed time in HH:MM:SS: ~d:~2,'0d:~2,'0d~%" (floor (/ elapsed-time 3600000)) (rem (floor (/ elapsed-time 60000)) 60) (rem (floor (/ elapsed-time 1000)) 60))
+        (format t "ETL: ~d:~2,'0d:~2,'0d~%" (floor (/ etl 3600000)) (rem (floor (/ etl 60000)) 60) (rem (floor (/ etl 1000)) 60))
         (terpri)))
 
 ;; Funções para separar uma string, dado uma string "separadora"
