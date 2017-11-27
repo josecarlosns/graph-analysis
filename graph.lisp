@@ -141,7 +141,7 @@
             (decf end-time start-time)
             (incf total-time end-time)
             (when verbose
-                (print-progress (1+ node1) number-of-nodes (/ total-time (1+ node1)))))
+                (print-progress (1+ node1) number-of-nodes total-time)))
         (setf (gethash "adj-list" (properties graph)) (adj-list graph))
         (when verbose
             (progn
