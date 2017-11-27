@@ -1,4 +1,4 @@
-;; (load "metrics.lisp")
+(load "utils.lisp")
 ;; Class that represents a graph, it has 3 properites:
 ;;     Properties -> a hash-table were in the pair (key value) the key is a label of a property of the graph
 ;;     and its value is the current value of the property.
@@ -14,26 +14,14 @@
 ;;             "number-of-nodes" -> the number of nodes.
 ;;             "number-of-edges" -> the number of edges.
 ;;             "adj-list" -> the adjacency list used to represent the graph. Used as parameter by most algorithms.
-;;             "distances" -> an array containing the distances from an node origin to all other nodes, it has an format
-;;             a(x)=y, where: 
-;;                 x -> the origin node.
-;;                 y -> another array b(x1)=y1, where:
-;;                     x1 -> the destination node.
-;;                     y1 -> the shortest distance between x and y1 in number of edges crossed.
-;;             "parents" -> an array containing the parents from an node origin to all other nodes, it has an format
-;;             a(x)=y, where: 
-;;                 x -> the origin node.
-;;                 y -> another array b(x1)=y1, where:
-;;                     x1 -> the destination node.
-;;                     y1 -> the parent node of x1 who is closest in distance to x.
+;;             "degree-dist" -> the degree distribution of the graph.
 ;;     Edges -> a list of all the edges of the graph
 (defclass graph ()
-    (
-        (properties :accessor properties
-            :initform (make-hash-table :test #'equal))
-        (edge :accessor edges
-            :initform nil
-            :initarg :edges)))
+    ((properties :accessor properties
+        :initform (make-hash-table :test #'equal))
+    (edge :accessor edges
+        :initform nil
+        :initarg :edges)))
 
 ;; Returns an empty graph of the given type and weighted if weighted=t
 (defmethod empty-graph (type weighted)
@@ -71,6 +59,10 @@
 ;; Prints information about the given graph, like number of nodes and edges, to the given stream. 
 ;; If verbose, then it will print adicional information like average distance, eficiency etc.
 (defmethod print-graph-info ((g graph) &optional &key (stream t) (verbose nil))
+    (terpri)
+    (dotimes (n 50)
+        (princ "#"))
+    (terpri)
     (format stream "Number of nodes: ~a~%Number of edges: ~a~%" 
         (gethash "number-of-nodes" (properties g)) (gethash "number-of-edges" (properties g)))
     (when verbose
@@ -80,7 +72,39 @@
             (format stream "Average distance: ~1,4f~%" (gethash "average-distance" (properties g)))
             (format stream "Average efficiency: ~1,4f~%" (gethash "average-efficiency" (properties g)))
             (format stream "Density: ~1,2f%~%" (* 100 (gethash "density" (properties g))))
-            (format stream "Expected degree (OUT IN): ~1,2f~%" (gethash "expected-degree" (properties g))))))
+            (let ((expt-degree nil))
+                (setf expt-degree (gethash "expected-degree" (properties g)))
+                (when (= 2 (gethash "type" (properties g)))
+                    (setf expt-degree (list expt-degree expt-degree)))
+                (format stream "Expected degree ( OUT IN ): ~{~f ~}~%" expt-degree))
+            (format stream "Diameter: ~1,2f~%" (gethash "diameter" (properties g)))
+            (format stream "Degree distribution: Degree=(outcoming incoming)~%")
+            (let ((degree-dist nil))
+                (setf degree-dist (gethash "degree-dist" (properties g)))
+                (if (= 2 (gethash "type" (properties g)))
+                    (loop for degree from 0 to (1- (gethash "number-of-nodes" (properties g))) do
+                        (let ((dist nil))
+                            (setf dist (aref degree-dist degree))
+                            (when (> dist 0)
+                                (progn
+                                    (dotimes (n 5)
+                                        (format stream "~t"))
+                                    (format stream "~d=(~,5f% ~,5f%)~%" degree (* 100 dist) (* 100 dist))
+                                    (terpri)))))
+                    (loop for degree from 0 to (1- (gethash "number-of-nodes" (properties g))) do
+                        (let ((out nil) (in nil))
+                            (setf out (aref (first degree-dist) degree))
+                            (setf in (aref (second degree-dist) degree))
+                            (when (or (> out 0) (> in 0))
+                                (progn
+                                    (dotimes (n 5)
+                                        (format stream "~t"))
+                                    (format stream "~d=(~,5f% ~,5f%)~%" degree (* 100 out) (* 100 in))))))))))
+    
+    (terpri)
+    (dotimes (n 50)
+        (princ "#"))
+    (terpri))
 
 ;; Creates an random graph with the given number of nodes, type, probability of existing edge and random weight, if any.
 ;;     Parameters:
@@ -91,18 +115,39 @@
 ;;             weight-range -> If given an value, each existing edge will be given an random value from 0 to weight-range.
 ;;     Returns:
 ;;         An random graph with the given caracteristics.
-(defmethod random-graph (number-of-nodes type edge-prob)
+(defmethod random-graph (number-of-nodes type edge-prob &optional &key (verbose nil))
     (setf *random-state* (make-random-state t))
-    (let ((graph nil))
+    (let ((graph nil) (total-time 0) (start-time nil) (end-time nil))
         (setf graph (empty-graph type nil))
         (setf (gethash "number-of-nodes" (properties graph)) number-of-nodes)
+        (when verbose
+            (progn
+                (terpri)
+                (dotimes (n 50)
+                    (princ "#"))
+                (terpri)
+                (format t "Generating graph...")
+                (terpri)))
         (dotimes (node1 number-of-nodes)
+            (setf start-time (get-internal-real-time))
             (dotimes (j (if (= 1 type) number-of-nodes (- number-of-nodes node1)))
                 (let ((node2 nil) (edge nil))
                     (setf node2 (if (= 1 type) j (+ j node1)))
                     (when (and (not (= 0 edge-prob)) (not (= node1 node2)) (<= (/ (random 100001) 1000) edge-prob))
                         (progn
                             (setf edge (list node1 node2))
-                            (add-edge graph edge))))))
+                            (add-edge graph edge)))))
+            (setf end-time (get-internal-real-time))
+            (decf end-time start-time)
+            (incf total-time end-time)
+            (when verbose
+                (print-progress (1+ node1) number-of-nodes (/ total-time (1+ node1)))))
         (setf (gethash "adj-list" (properties graph)) (adj-list graph))
+        (when verbose
+            (progn
+                (terpri)
+                (format t "Done!~%")
+                (dotimes (n 50)
+                    (princ "#"))
+                (terpri)))
         graph))
