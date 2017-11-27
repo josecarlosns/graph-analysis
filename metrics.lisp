@@ -25,81 +25,106 @@
             (float (/ num-of-edges (/ (* (1- num-of-nodes) num-of-nodes) 2))))))
 
 
-;; Returns an array where each element e(x)= (a b) where:
-;;     x -> An node
-;;     a -> The outcoming degree of x
-;;     b -> The incoming degree of x
-(defmethod degrees ((g graph))
-    (let ((degree-array nil) (adj-list nil) (number-of-nodes nil))
+;; Returns an array with the outcoming (and another with the incoming, if the graph is directed) degrees of
+;; each node of the graph
+(defmethod degrees ((g graph) &optional &key (verbose nil))
+    (let ((out-array nil) (in-array nil) (adj-list nil) (number-of-nodes nil) (total-time 0) (type nil))
         (setf number-of-nodes (gethash "number-of-nodes" (properties g)))
-        (setf degree-array (make-array number-of-nodes :initial-element nil))
         (setf adj-list (gethash "adj-list" (properties g)))
-        (dotimes (node1 number-of-nodes)
-            (let ((out 0))
-                (dolist (edge (aref adj-list node1))
-                    (incf out)
-                    (let ((node2 nil))
-                        (setf node2 (second edge))
-                        (when (null (aref degree-array node2))
-                            (setf (aref degree-array node2) (list 0 0)))
-                        (incf (second (aref degree-array node2)))))
-                (when (null (aref degree-array node1))
-                    (setf (aref degree-array node1) list 0 0))
-                (setf (first (aref degree-array node1)) out)))
-        degree-array))
-
-;; Returns an list (d(0) d(1) d(2) ... d(n)) where d is an trio (x y z) where:
-;;     z -> an degree
-;;     x -> probability of an random node to have the outcoming degree of z.
-;;     y -> probability of an random node to have the incoming degree of z.
-;;     Obs.: the list does not stores an trio where x and y are equal to 0.
-(defmethod degree-dist ((g graph) &optional &key (verbose nil))
-    (let ((degrees nil) (out-sum 0) (in-sum 0) (current-degree 0) (number-of-nodes nil) (total-time 0))
-        (setf number-of-nodes (gethash "number-of-nodes" (properties g)))
+        (setf type (gethash "type" (properties g)))
+        (setf out-array (make-array number-of-nodes :initial-element 0))
+        (when (= 1 type)
+            (setf in-array (make-array number-of-nodes :initial-element 0)))
         (when verbose
             (progn
-                (format t "Calculating degree distribution:")
-                (terpri))
-        (setf degrees (degrees g))
-        (loop
-            (let ((degree nil) (out nil) (in nil) (start-time nil) (end-time nil))
+                (terpri)
+                (format t "Calculating degrees...")
+                (terpri)))
+        (dotimes (node1 number-of-nodes)
+            (let ((start-time nil) (end-time nil) (adj-nodes nil))
                 (setf start-time (get-internal-real-time))
-                (setf degree (degree-prob g current-degree))
-                (setf out (first degree))
-                (setf in (second degree))
-                (when (or (> out 0) (> in 0))
+                (setf adj-nodes (aref adj-list node1))
+                (setf (aref out-array node1) (list-length adj-nodes))
+                (when (= 1 type)
+                    (dolist (node2 adj-nodes)
+                        (incf (aref in-array node2))))
+                (setf end-time (get-internal-real-time))
+                (decf end-time start-time)
+                (incf total-time end-time)
+                (when verbose
+                    (print-progress (1+ node1) number-of-nodes (/ total-time (1+ node1))))))
+        (when verbose
+            (progn
+                (terpri)
+                (format t "Done!")
+                (terpri)))
+        (if (= 1 type)
+            (list out-array in-array)
+            out-array)))
+
+
+;; Returns an list (x y z) where:
+;;     x -> the expected degree of the graph, (OUTCOMING INCOMING) if directed, OUTCOMING if otherwise.
+;;     y -> an array with the distribution of all outcoming degrees.
+;;     z -> like y, but with incoming degrees, only present if graph is directed.
+(defmethod degree-dist ((g graph) &optional &key (verbose nil))
+    (let ((degrees-out nil) (degrees-in nil) (degree-dist-out nil) (degree-dist-in nil) 
+            (number-of-nodes nil) (type nil) (total-time 0) (expt-degree nil))
+        (setf number-of-nodes (gethash "number-of-nodes" (properties g)))
+        (setf degrees-out (degrees g :verbose verbose))
+        (setf type (gethash "type" (properties g)))
+        (setf degree-dist-out (make-array number-of-nodes :initial-element 0))
+        (setf expt-degree 0)
+        (when (= 1 type)
+            (progn
+                (setf expt-degree (list 0 0))
+                (setf degrees-in (second degrees-out))
+                (setf degrees-out (first degrees-out))
+                (setf degree-dist-in (make-array number-of-nodes :initial-element 0))))
+        (when verbose
+            (progn
+                (terpri)
+                (format t "Calculating degree distribution:")
+                (terpri)))
+        (dotimes (i number-of-nodes)
+            (let ((out nil) (in nil) (start-time nil) (end-time nil))
+                (setf start-time (get-internal-real-time))
+                (setf out (aref degrees-out i))
+                (if (= 1 type)
                     (progn
-                        (incf out-sum out)
-                        (incf in-sum in)
-                        (push (list current-degree out in) degrees)))
-                (incf current-degree)
+                        (setf in (aref degrees-in i))
+                        (incf (aref degree-dist-in in))
+                        (incf (first expt-degree) out)
+                        (incf (second expt-degree) in))
+                    (incf expt-degree out))
+                (incf (aref degree-dist-out out))
                 (setf end-time (get-internal-real-time))
                 (setf end-time (decf end-time start-time))
                 (incf total-time end-time)
                 (when verbose
-                    (print-progress current-degree number-of-nodes (/ total-time current-degree))))
-            (when (> current-degree number-of-nodes)
-                (progn
-                    (when verbose
-                        (progn
-                            (format t "~%Done!")
-                            (terpri)))
-                    (return (reverse degrees))))))))
-
-;; Returns the expected degree of the graph as an pair (OUT IN) where:
-;;     OUT -> The expected degree out of nodes.
-;;     IN -> The expected degree in of nodes.
-(defmethod expt-degree ((g graph))
-    (let ((out 0) (in 0) (number-of-nodes nil))
-        (setf number-of-nodes (gethash "number-of-nodes" (properties g)))
-        (dotimes (n number-of-nodes)
-            (let ((node-degree nil))
-                (setf node-degree (degree g n))
-                (incf out (first node-degree))
-                (incf in (second node-degree))))
-        (setf out (/ out number-of-nodes))
-        (setf in (/ in number-of-nodes))
-        (list out in)))
+                    (print-progress i (* 2 number-of-nodes) (/ total-time (1+ i))))))
+        (dotimes (i number-of-nodes)
+            (let ((start-time nil) (end-time nil))
+                (setf start-time (get-internal-real-time))
+                (setf (aref degree-dist-out i) (/ (aref degree-dist-out i) number-of-nodes))
+                (when (= 1 type)
+                    (setf (aref degree-dist-in i) (/ (aref degree-dist-in i) number-of-nodes)))
+                (setf end-time (get-internal-real-time))
+                (setf end-time (decf end-time start-time))
+                (incf total-time end-time))
+                (when verbose
+                    (print-progress (+ number-of-nodes (1+ i)) (* 2 number-of-nodes) (/ total-time (+ number-of-nodes (1+ i))))))
+        (when verbose
+            (progn
+                (terpri)
+                (format t "Done!")
+                (terpri)))
+        (if (= 1 type)
+            (progn
+                (setf (first expt-degree) (/ (first expt-degree) number-of-nodes))
+                (setf (second expt-degree) (/ (second expt-degree) number-of-nodes))
+                (list expt-degree degree-dist-out degree-dist-in))
+            (list (/ expt-degree number-of-nodes) degree-dist-out))))
 
 ;; Sets and returns the distances array and the bfs-tree for the graph given the origin point as the node origin
 (defmethod bfs-search ((g graph) origin)
@@ -148,16 +173,22 @@
 
         (when verbose
             (progn
-                (format t "Analysis starting...")
+                (terpri)
+                (dotimes (n 50)
+                    (princ "#"))
+                (terpri)
+                (format t "Analysis starting...~%")
                 (terpri)))
 
         (setf density (density g))
-        (setf expt-degree (expt-degree g))
         (setf degree-dist (degree-dist g :verbose verbose))
+        (setf expt-degree (first degree-dist))
+        (setf degree-dist (if (= 1 type) (cdr degree-dist) (second degree-dist)))
 
         (when verbose
             (progn
-                (format t "Calculating average distance...")
+                (terpri)
+                (format t "Calculating average distance and efficiency...")
                 (terpri)))
         
         (dotimes (node1 num-nodes)
@@ -173,28 +204,33 @@
                         (when (not (equal node1 node2))
                             (setf distance (aref distance-array node2))
                             (when (= -1 distance)
-                            (progn
-                                (when verbose
-                                    (format t "~%The graph is unconnected, stopping analysis...")
-                                    (terpri))
-                                (return (setf unconnected t))))
+                                (progn
+                                    (when verbose
+                                        (terpri)
+                                        (format t "~%The graph is unconnected, stopping analysis...")
+                                        (terpri))
+                                    (return (setf unconnected t))))
                             (when (> distance diameter)
                                 (setf diameter distance))
                             (incf total-distance distance))))
+                (when unconnected
+                    (return nil))
                 (setf end-time (get-internal-real-time))
                 (setf end-time (- end-time start-time))
                 (incf total-time end-time)
                 (when verbose
                     (progn
-                        (print-progress progress num-nodes (/ total-time progress))))
-                (when unconnected
-                    (return nil))))
+                        (print-progress progress num-nodes (/ total-time progress))))))
         (if unconnected
             nil
             (progn
                 (when verbose
                     (progn
-                        (format t "~%Analysis complete!")
+                        (terpri)
+                        (format t "Analysis complete!")
+                        (terpri)
+                        (dotimes (n 50)
+                            (princ "#"))
                         (terpri)))
                 (setf total-distance (/ total-distance max-num-paths))
                 (setf (gethash "diameter" (properties g)) diameter) 

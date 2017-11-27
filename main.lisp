@@ -58,7 +58,7 @@
                             (if (and (numberp number-of-nodes) (or (>= edge-prob 0) (<= edge-prob 100)) )
                                 (return nil)
                                 (format t "Digite uma opção válida!~%")))
-                        (setf graph (random-graph number-of-nodes graph-type edge-prob))
+                        (setf graph (random-graph number-of-nodes graph-type edge-prob :verbose t))
                             (setf connected (run-analysis graph :verbose t))
                             (print-graph-info graph :verbose connected))))
             (format t "Operação inválida!~%"))))
