@@ -235,7 +235,7 @@
 
 ;; Generates a number of random graphs, analyses them and gives metrics like average diameter and number of generated
 ;; unconnected graphs. Unconnected graphs are not counted in the average diameter calculation
-(defmethod average-analysis (number-of-graphs number-of-nodes type edge-prob &optional &key (verbose nil))
+(defmethod random-graphs-analysis (number-of-graphs number-of-nodes type edge-prob &optional &key (verbose nil))
     (let ((average-diameter 0) (unconnected-graphs 0) (total-time 0))
         (when verbose
             (progn
@@ -243,7 +243,7 @@
                 (dotimes (n 50)
                     (princ "#"))
                 (terpri)
-                (format t "Calculating average diameter...")
+                (format t "Calculating average diameter and connectedness...")
                 (terpri)))
         (dotimes (n number-of-graphs)
             (let ((diameter nil) (graph nil) (start-time nil) (end-time nil))
