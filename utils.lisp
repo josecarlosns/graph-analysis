@@ -1,4 +1,4 @@
-;; Implementação de uma fila simples em LISP e suas funções de suporte
+;; Simple queue implementation
 (defstruct queue
     head
     tail)
@@ -40,7 +40,7 @@
                         (return (reverse q-list)))))
             nil)))
 
-;; Imprime um texto humanamente legível sobre o progresso de um algoritmo
+;; Prints progress information about given operation
 (defun print-progress (steps steps-total elapsed-time)
     (let ((time-per-step nil) (etl nil) (steps-left nil))
         (setf time-per-step (/ elapsed-time (if (= 0 steps) 1 steps)))
@@ -53,7 +53,7 @@
             (floor (/ etl 3600000)) (rem (floor (/ etl 60000)) 60) (rem (floor (/ etl 1000)) 60))
         (finish-output)))
 
-;; Funções para separar uma string, dado uma string "separadora"
+;; Function to split string given an separator string
 ;; Taken fron: https://gist.github.com/siguremon/1174988
 (defun split-str-1 (string &optional (separator " ") (r nil))
   (let ((n (position separator string
@@ -78,4 +78,11 @@
 ;; Each element of the list will be printed on a new line.
 (defun plot-data (data &optional &key (stream t))
     (loop for e in data and index from 0 do
-        (format t "~d ~f ~%" index e)))
+        (format stream "~d ~f ~%" index e)))
+
+;; Saves the data in an file in an "plottable" way
+(defun save-data (data file-name)
+    (let ((file nil))
+        (setf file (open (merge-pathnames file-name) :direction :output :if-exists :supersede :if-does-not-exist :create))
+        (plot-data data :stream file)
+        (close file)))

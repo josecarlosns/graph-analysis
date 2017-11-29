@@ -259,7 +259,7 @@
                 (incf total-time end-time)
                 (when verbose
                     (print-progress n number-of-graphs total-time))))
-        (setf average-diameter (/ average-diameter (if (= 0 (- number-of-graphs unconnected-graphs)) 1 number-of-graphs)))
+        (setf average-diameter (/ average-diameter (if (= 0 (- number-of-graphs unconnected-graphs)) 1 (- number-of-graphs unconnected-graphs))))
         (when verbose
             (progn
                 (terpri)
@@ -268,11 +268,11 @@
                 (dotimes (n 50)
                     (princ "#"))
                 (terpri)))
-        (setf unconnected-graphs (if (= 0 unconnected-graphs) 0 (/ unconnected-graphs number-of-graphs)))
+        (setf unconnected-graphs (if (= 0 unconnected-graphs) 1 (/ (- number-of-graphs unconnected-graphs) number-of-graphs)))
         (list average-diameter unconnected-graphs)))
 
 ;; Calculates the conectedness of random graphs over p{0-100}, which is the probability of link between two nodes
-(defmethod conectedness-over-p (number-of-graphs number-of-nodes type &optional &key (verbose nil))
+(defmethod connectedness-over-p (number-of-graphs number-of-nodes type &optional &key (verbose nil))
     (let ((total-time 0) (data nil) (connectedness nil))
         (when verbose
             (progn
