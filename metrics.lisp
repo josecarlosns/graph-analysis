@@ -233,4 +233,39 @@
                 (setf (gethash "degree-dist" (properties g)) degree-dist)
                 t))))
 
-(defmethod average-diameter ((g graph)))
+;; Generates a number of random graphs, analyses them and gives metrics like average diameter and number of generated
+;; unconnected graphs. Unconnected graphs are not counted in the average diameter calculation
+(defmethod average-analysis (number-of-graphs number-of-nodes type edge-prob &optional &key (verbose nil))
+    (let ((average-diameter 0) (unconnected-graphs 0) (total-time 0))
+        (when verbose
+            (progn
+                (terpri)
+                (dotimes (n 50)
+                    (princ "#"))
+                (terpri)
+                (format t "Calculating average diameter...")
+                (terpri)))
+        (dotimes (n number-of-graphs)
+            (let ((diameter nil) (graph nil) (start-time nil) (end-time nil))
+                (setf start-time (get-internal-real-time))
+                (setf graph (random-graph number-of-nodes type edge-prob))
+                (if (run-analysis graph)
+                    (progn
+                        (setf diameter (gethash "diameter" (properties graph)))
+                        (incf average-diameter diameter))
+                    (incf unconnected-graphs))
+                (setf end-time (get-internal-real-time))
+                (decf end-time start-time)
+                (incf total-time end-time)
+                (when verbose
+                    (print-progress (1+ n) number-of-graphs total-time))))
+        (setf average-diameter (/ average-diameter (if (= 0 (decf number-of-graphs unconnected-graphs)) 1 number-of-graphs)))
+        (when verbose
+            (progn
+                (terpri)
+                (format t "Done!")
+                (terpri)
+                (dotimes (n 50)
+                    (princ "#"))
+                (terpri)))
+        (list average-diameter unconnected-graphs)))
