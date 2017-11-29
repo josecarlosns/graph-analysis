@@ -112,9 +112,9 @@
 ;;         type -> The type of the graph, which is 1 for directed and 2 for undirected.
 ;;         edge-prob -> The probability of an edge to exist, ranging from 0 to 100.
 ;;         Optional:
-;;             weight-range -> If given an value, each existing edge will be given an random value from 0 to weight-range.
+;;             verbose -> If true, will print information like progress, estimated time left etc..
 ;;     Returns:
-;;         An random graph with the given caracteristics.
+;;         An random graph
 (defmethod random-graph (number-of-nodes type edge-prob &optional &key (verbose nil))
     (setf *random-state* (make-random-state t))
     (let ((graph nil) (total-time 0) (start-time nil) (end-time nil))

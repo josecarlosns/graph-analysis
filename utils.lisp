@@ -43,7 +43,7 @@
 ;; Imprime um texto humanamente legível sobre o progresso de um algoritmo
 (defun print-progress (steps steps-total elapsed-time)
     (let ((time-per-step nil) (etl nil) (steps-left nil))
-        (setf time-per-step (/ elapsed-time steps))
+        (setf time-per-step (/ elapsed-time (if (= 0 steps) 1 steps)))
         (setf steps-left (- steps-total steps))
         (setf etl (* time-per-step steps-left))
         (format t "~aProgress: ~,5f%~tElapsed time: ~d:~2,'0d:~2,'0d~tETL: ~d:~2,'0d:~2,'0d" 
@@ -54,7 +54,7 @@
         (finish-output)))
 
 ;; Funções para separar uma string, dado uma string "separadora"
-;; Retirado de: https://gist.github.com/siguremon/1174988
+;; Taken fron: https://gist.github.com/siguremon/1174988
 (defun split-str-1 (string &optional (separator " ") (r nil))
   (let ((n (position separator string
 		     :from-end t
@@ -73,3 +73,9 @@
         (loop for i from 1 to n and e in list do
             (push e new-list))
         (reverse new-list)))
+
+;; Prints to an stream the list in a way that can be plotted on a graph.
+;; Each element of the list will be printed on a new line.
+(defun plot-data (data &optional &key (stream t))
+    (loop for e in data and index from 0 do
+        (format t "~d ~f ~%" index e)))
