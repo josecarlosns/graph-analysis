@@ -1,7 +1,7 @@
 (load "graph.lisp")
 (load "utils.lisp")
 
-;; Returns the adjacency list for the node
+;; Returns the adjacency list for the graph
 (defmethod adj-list ((g graph))
     (let ((adj-list nil) (g-type nil))
         (setf adj-list (make-array (gethash "number-of-nodes" (properties g)) :initial-element nil))

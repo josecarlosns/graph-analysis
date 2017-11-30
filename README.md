@@ -8,6 +8,8 @@ LISP code for graph analysis, including many implementations of Graph Theory alg
 - Add an ASDF system definition after it is stable enough to be used by others
     - Then make it available in Quicklisp or some other CLisp package manager maybe?
 - Optimize the code.
+    - The small world algorithm is not optimized.
+    - The average diameter and connectedness algorithms are too slow to my liking...
 - Support for various different types of TGF formats (loading and saving).
 - Add support for non-sequential node-ids, labels (weights, descriptions etc.) to nodes and edges.
 - Support for graph editing operations.
@@ -22,3 +24,5 @@ LISP code for graph analysis, including many implementations of Graph Theory alg
 
 - Does not support unconnected graphs.
 - Does not process user input on main.lisp, which leads to crashes.
+- Regular graph generator crashes with uneven degree values.
+- Time in progress printing is incorrect sometimes (probably due to accuracy of time counting...)

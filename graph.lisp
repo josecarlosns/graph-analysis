@@ -100,13 +100,12 @@
                                     (dotimes (n 5)
                                         (format stream "~t"))
                                     (format stream "~d=(~,5f% ~,5f%)~%" degree (* 100 out) (* 100 in))))))))))
-    
     (terpri)
     (dotimes (n 50)
         (princ "#"))
     (terpri))
 
-;; Creates an random graph with the given number of nodes, type, probability of existing edge and random weight, if any.
+;; Creates an random graph using the model of Erdös and Rényi.
 ;;     Parameters:
 ;;         number-of-nodes -> The number of nodes for the graph.
 ;;         type -> The type of the graph, which is 1 for directed and 2 for undirected.
@@ -150,4 +149,90 @@
                 (dotimes (n 50)
                     (princ "#"))
                 (terpri)))
+        graph))
+
+;; Generates an regular undirected graph, that is, a graph where 
+;; each node has the same degree of "degree"
+(defmethod regular-graph (number-of-nodes degree &optional &key (verbose nil))
+    (let ((graph nil) (total-time 0))
+        (setf graph (empty-graph 2 nil))
+        (setf (gethash "number-of-nodes" (properties graph)) number-of-nodes)
+        (when verbose
+            (progn
+                (terpri)
+                (dotimes (n 50)
+                    (princ "#"))
+                (terpri)
+                (format t "Generating regular graph...")
+                (terpri)))
+        (dotimes (node number-of-nodes)
+            (let ((adj-nodes nil) (start-time nil) (end-time nil))
+                (setf start-time (get-internal-real-time))
+                (dotimes (x (/ degree 2))
+                    (let ((node2 nil))
+                        (setf node2 (rem (+ (1+ x) node) number-of-nodes))
+                        (add-edge graph (list node node2))))
+                (setf end-time (get-internal-real-time))
+                (decf end-time start-time)
+                (incf total-time end-time)
+                (when verbose
+                    (print-progress (1+ node) number-of-nodes total-time))))
+        (when verbose
+            (progn
+                (terpri)
+                (dotimes (n 50)
+                    (princ "#"))
+                (terpri)
+                (format t "Done!")
+                (terpri)))
+        (setf (gethash "adj-list" (properties graph)) (adj-list graph))
+        graph))
+
+;; Creates a random graph using the model of Watts e Strogatz, named "small world", where initially
+;; each node has a degree of "degree", and has an extra p (0-100) chance of "redefining" links to other nodes.
+(defmethod small-world (number-of-nodes degree p &optional &key (verbose nil))
+    (setf *random-state* (make-random-state t))
+    (let ((graph nil) (adj-list nil) (start-time nil) (end-time nil) (total-time 0) (progress 0) (max-progress nil))
+        (setf graph (regular-graph number-of-nodes degree :verbose verbose))
+        (setf adj-list (gethash "adj-list" (properties graph)))
+        (setf max-progress (/ (* number-of-nodes (1- number-of-nodes)) 2))
+        (when verbose
+            (progn
+                (terpri)
+                (dotimes (n 50)
+                    (princ "#"))
+                (terpri)
+                (format t "Applying p to regular graph...")
+                (terpri)))
+        (dotimes (node1 number-of-nodes)
+            (dotimes (x (- number-of-nodes node1))
+                (let ((rand nil) (node2 nil))
+                    (incf progress)
+                    (setf start-time (get-internal-real-time))
+                    (setf node2 (+ x node1))
+                    (when (not (= node1 node2))
+                        (setf rand (random 100001))
+                        (when (<= (/ rand 1000) p)
+                            (let ((edge nil))
+                                (setf edge (list node1 node2))
+                                (if (find node2 (aref adj-list node1))
+                                    (progn
+                                        (decf (gethash "number-of-edges" (properties graph)))
+                                        (setf (edges graph) (remove edge (edges graph) :test #'equal))
+                                        (setf (edges graph) (remove (reverse edge) (edges graph) :test #'equal)))
+                                    (add-edge graph edge)))))
+                    (setf end-time (get-internal-real-time))
+                    (decf end-time start-time)
+                    (incf total-time end-time)
+                    (when verbose
+                        (print-progress progress max-progress total-time)))))
+        (when verbose
+            (progn
+                (terpri)
+                (dotimes (n 50)
+                    (princ "#"))
+                (terpri)
+                (format t "Done!")
+                (terpri)))
+        (setf (gethash "adj-list" (properties graph)) (adj-list graph))
         graph))
