@@ -53,8 +53,16 @@
 ;;     Returns:
 ;;         The new edge added.
 (defmethod add-edge ((g graph) edge)
-    (incf (gethash "number-of-edges" (properties g)))
-    (push edge (edges g)))
+    (if (= 1 (gethash "type" (properties g)))
+        (when (not (find edge (edges g) :test #'equal))
+            (progn
+                (incf (gethash "number-of-edges" (properties g)))
+                (push edge (edges g))))
+        (when (and  (not (find edge (edges g) :test #'equal))
+                    (not (find (reverse edge) (edges g) :test #'equal)))
+            (progn
+                (incf (gethash "number-of-edges" (properties g)))
+                (push edge (edges g))))))
 
 ;; Prints information about the given graph, like number of nodes and edges, to the given stream. 
 ;; If verbose, then it will print adicional information like average distance, eficiency etc.
@@ -115,8 +123,7 @@
 ;;     Returns:
 ;;         An random graph
 (defmethod random-graph (number-of-nodes type edge-prob &optional &key (verbose nil))
-    (setf *random-state* (make-random-state t))
-    (let ((graph nil) (total-time 0) (start-time nil) (end-time nil))
+    (let ((graph nil) (total-time 0) (start-time nil) (end-time nil) (r-state (make-random-state t)))
         (setf graph (empty-graph type nil))
         (setf (gethash "number-of-nodes" (properties graph)) number-of-nodes)
         (when verbose
@@ -132,7 +139,7 @@
             (dotimes (j (if (= 1 type) number-of-nodes (- number-of-nodes node1)))
                 (let ((node2 nil) (edge nil))
                     (setf node2 (if (= 1 type) j (+ j node1)))
-                    (when (and (not (= 0 edge-prob)) (not (= node1 node2)) (<= (/ (random 100001) 1000) edge-prob))
+                    (when (and (not (= 0 edge-prob)) (not (= node1 node2)) (<= (/ (random 100001 r-state) 1000) edge-prob))
                         (progn
                             (setf edge (list node1 node2))
                             (add-edge graph edge)))))
@@ -191,8 +198,7 @@
 ;; Creates a random graph using the model of Watts e Strogatz, named "small world", where initially
 ;; each node has a degree of "degree", and has an extra p (0-100) chance of "redefining" links to other nodes.
 (defmethod small-world (number-of-nodes degree p &optional &key (verbose nil))
-    (setf *random-state* (make-random-state t))
-    (let ((graph nil) (adj-list nil) (start-time nil) (end-time nil) (total-time 0) (progress 0) (max-progress nil))
+    (let ((graph nil) (adj-list nil) (start-time nil) (end-time nil) (total-time 0) (progress 0) (max-progress nil) (r-state (make-random-state t)))
         (setf graph (regular-graph number-of-nodes degree :verbose verbose))
         (setf adj-list (gethash "adj-list" (properties graph)))
         (setf max-progress (/ (* number-of-nodes (1- number-of-nodes)) 2))
@@ -202,7 +208,7 @@
                 (dotimes (n 50)
                     (princ "#"))
                 (terpri)
-                (format t "Applying p to regular graph...")
+                (format t "Generating small-world graph from regular graph...")
                 (terpri)))
         (dotimes (node1 number-of-nodes)
             (dotimes (x (- number-of-nodes node1))
@@ -211,7 +217,7 @@
                     (setf start-time (get-internal-real-time))
                     (setf node2 (+ x node1))
                     (when (not (= node1 node2))
-                        (setf rand (random 100001))
+                        (setf rand (random 100001 r-state))
                         (when (<= (/ rand 1000) p)
                             (let ((edge nil))
                                 (setf edge (list node1 node2))
@@ -236,3 +242,44 @@
                 (terpri)))
         (setf (gethash "adj-list" (properties graph)) (adj-list graph))
         graph))
+
+;; Returns an random scale-free graph, according to the Barabási and Albert (1999) model of scale-free graphs
+(defmethod scale-free (number-of-nodes edges-per-insertion &optional &key (verbose nil))
+    (let  ((r-state nil))
+        (setf r-state (make-random-state t)) 
+        (when verbose
+            (progn
+                (terpri)
+                (dotimes (n 50)
+                    (princ "#"))
+                (terpri)
+                (format t "Generating scale-free graph...")
+                (terpri)))
+        (let ((graph nil) (degree nil) (adj-list nil) (start-time nil) (end-time nil) (total-time 0))
+            (setf graph (empty-graph 2 nil))
+            (setf adj-list (make-array number-of-nodes :initial-element nil))
+            (setf (gethash "number-of-nodes" (properties graph)) number-of-nodes)
+            (dotimes (node number-of-nodes)
+                (setf start-time (get-internal-real-time))
+                (let ((neighbors nil))
+                    (setf neighbors (choose-neighbors adj-list node edges-per-insertion))
+                    (dolist (node2 neighbors)
+                        (let ((edge nil))
+                            (setf edge (list node node2))
+                            (add-edge graph edge)))
+                    (setf adj-list (adj-list graph)))
+                (setf end-time (get-internal-real-time))
+                (decf end-time start-time)
+                (incf total-time end-time)
+                (when verbose
+                        (print-progress node number-of-nodes total-time)))
+        (when verbose
+            (progn
+                (terpri)
+                (dotimes (n 50)
+                    (princ "#"))
+                (terpri)
+                (format t "Done!")
+                (terpri)))
+        (setf (gethash "adj-list" (properties graph)) adj-list)
+        graph)))
