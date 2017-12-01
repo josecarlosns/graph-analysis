@@ -1,20 +1,6 @@
 (load "graph.lisp")
 (load "utils.lisp")
 
-;; Returns the adjacency list for the graph
-(defmethod adj-list ((g graph))
-    (let ((adj-list nil) (g-type nil))
-        (setf adj-list (make-array (gethash "number-of-nodes" (properties g)) :initial-element nil))
-        (setf g-type (gethash "type" (properties g)))
-        (dolist (edge (edges g))
-            (let ((node1) (node2 nil))
-                (setf node1 (first edge))
-                (setf node2 (second edge))
-                (push node2 (aref adj-list node1))
-                (when (= 2 g-type)
-                    (push node1 (aref adj-list node2)))))
-        adj-list))
-
 ;; Returns the density of the graph
 (defmethod density ((g graph))
     (let ((num-of-nodes nil) (num-of-edges nil))

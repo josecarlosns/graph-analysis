@@ -1,5 +1,5 @@
 (load "utils.lisp")
-;; Class that represents a graph, it has 3 properites:
+;; Class that represents a graph, it has 3 attributes:
 ;;     Properties -> a hash-table were in the pair (key value) the key is a label of a property of the graph
 ;;     and its value is the current value of the property.
 ;;         Keys:
@@ -15,13 +15,43 @@
 ;;             "number-of-edges" -> the number of edges.
 ;;             "adj-list" -> the adjacency list used to represent the graph. Used as parameter by most algorithms.
 ;;             "degree-dist" -> the degree distribution of the graph.
+;;     Nodes -> a list of all nodes of the graph
 ;;     Edges -> a list of all the edges of the graph
 (defclass graph ()
     ((properties :accessor properties
         :initform (make-hash-table :test #'equal))
+    (nodes :accessor nodes
+        :initform nil
+        :initarg :nodes)
     (edge :accessor edges
         :initform nil
-        :initarg :edges)))
+        :initarg :edges)
+    (adj-list :accessor adj-list
+        :initform nil
+        :initarg :adj-list)))
+
+(defstruct node
+    id
+    index
+    (adj-nodes nil)
+    (properties nil))
+
+(defstruct edge
+    nodeout
+    nodein
+    (properties nil))
+
+;; Returns the adjacency list for the graph
+(defmethod generate-adj-list ((g graph))
+    (let ((adj-list nil))
+        (setf adj-list (make-array (gethash "number-of-nodes" (properties g)) :initial-element nil))
+        (loop for node in (nodes g) and index from 0 do
+            (setf (node-index node) index))
+        (dolist (node (nodes g))
+            (setf (aref adj-list (node-index node)) (if (null (node-adj-nodes node))
+                                                        nil
+                                                        (mapcar #'node-index (node-adj-nodes node)))))
+        adj-list))
 
 ;; Returns an empty graph of the given type and weighted if weighted=t
 (defmethod empty-graph (type weighted)
@@ -33,18 +63,28 @@
         (setf (gethash "number-of-edges" (properties graph)) 0)
         graph))
 
-(Defmethod nodep ((g graph) node)
-    (if (>= node (gethash "number-of-nodes" (properties g))) nil t))
+(defmethod nodep ((g graph) node)
+    (dolist (n (nodes g))
+        (when (equal (node-id n) node)
+            (return t)))
+    nil)
 
 ;; Returns t if the graph 'g' contains the edge 'edge', nil if otherwise
 (defmethod edgep ((g graph) edge)
-    (if (find edge (edges g) :test #'equal) t nil))
+    (let ((adj-list nil))
+        (setf adj-list (adj-list g))
+        (if (find (second edge) (aref adj-list (first edge)) :test #'equal) t nil)))
 
 ;; Adds the given node to graph
 ;;     Parameters:
 ;;         g -> The graph for the node to be added.
-(defmethod add-node ((g graph))
-    (incf (gethash "number-of-nodes" (properties g))))
+(defmethod add-node ((g graph) node-id)
+    (incf (gethash "number-of-nodes" (properties g)))
+    (when (not (nodep node-id))
+        (let ((new-node nil))
+            (setf new-node (make-node :id node-id))
+            (push new-node (nodes g))
+        new-node)))
 
 ;; Adds the given edge to the graph
 ;;     Parameters:
@@ -53,16 +93,8 @@
 ;;     Returns:
 ;;         The new edge added.
 (defmethod add-edge ((g graph) edge)
-    (if (= 1 (gethash "type" (properties g)))
-        (when (not (find edge (edges g) :test #'equal))
-            (progn
-                (incf (gethash "number-of-edges" (properties g)))
-                (push edge (edges g))))
-        (when (and  (not (find edge (edges g) :test #'equal))
-                    (not (find (reverse edge) (edges g) :test #'equal)))
-            (progn
-                (incf (gethash "number-of-edges" (properties g)))
-                (push edge (edges g))))))
+    (incf (gethash "number-of-edges" (properties g)))
+    (push edge (edges g)))
 
 ;; Prints information about the given graph, like number of nodes and edges, to the given stream. 
 ;; If verbose, then it will print adicional information like average distance, eficiency etc.
@@ -123,7 +155,7 @@
 ;;     Returns:
 ;;         An random graph
 (defmethod random-graph (number-of-nodes type edge-prob &optional &key (verbose nil))
-    (let ((graph nil) (total-time 0) (start-time nil) (end-time nil) (r-state (make-random-state t)))
+    (let ((graph nil) (total-time 0) (start-time nil) (end-time nil) (r-state (make-random-state t)) (node-list nil))
         (setf graph (empty-graph type nil))
         (setf (gethash "number-of-nodes" (properties graph)) number-of-nodes)
         (when verbose
@@ -134,21 +166,32 @@
                 (terpri)
                 (format t "Generating graph...")
                 (terpri)))
-        (dotimes (node1 number-of-nodes)
-            (setf start-time (get-internal-real-time))
-            (dotimes (j (if (= 1 type) number-of-nodes (- number-of-nodes node1)))
-                (let ((node2 nil) (edge nil))
-                    (setf node2 (if (= 1 type) j (+ j node1)))
-                    (when (and (not (= 0 edge-prob)) (not (= node1 node2)) (<= (/ (random 100001 r-state) 1000) edge-prob))
-                        (progn
-                            (setf edge (list node1 node2))
-                            (add-edge graph edge)))))
-            (setf end-time (get-internal-real-time))
-            (decf end-time start-time)
-            (incf total-time end-time)
-            (when verbose
-                (print-progress (1+ node1) number-of-nodes total-time)))
-        (setf (gethash "adj-list" (properties graph)) (adj-list graph))
+        (dotimes (node-id number-of-nodes)
+            (let ((new-node nil))
+                (setf new-node (make-node :id node-id))
+                (push new-node (nodes graph))))
+        (setf node-list (nodes graph))
+        (dotimes (n number-of-nodes)
+            (let ((node1 nil) (node2 nil))
+                (setf start-time (get-internal-real-time))
+                (setf node1 (pop node-list))
+                (dolist (node2 (if (= 1 type) (nodes graph) node-list))
+                    (let ((edge nil))
+                        (when (and (not (= 0 edge-prob)) (not (= (node-id node1) (node-id node2))) (<= (/ (random 100001 r-state) 1000) edge-prob))
+                            (progn
+                                (setf edge (list node1 node2))
+                                (add-edge graph edge)
+                                (if (= 1 type)
+                                    (push node2 (node-adj-nodes node1))
+                                    (progn
+                                        (push node1 (node-adj-nodes node2))
+                                        (push node2 (node-adj-nodes node1))))))))
+                (setf end-time (get-internal-real-time))
+                (decf end-time start-time)
+                (incf total-time end-time)
+                (when verbose
+                    (print-progress (1+ n) number-of-nodes total-time))))
+        (setf (gethash "adj-list" (properties graph)) (generate-adj-list graph))
         (when verbose
             (progn
                 (terpri)

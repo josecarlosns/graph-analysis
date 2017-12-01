@@ -28,3 +28,4 @@ LISP code for graph analysis, including many implementations of Graph Theory alg
 - Regular graph generator crashes with uneven degree values.
 - Time in progress printing is incorrect sometimes (probably due to accuracy of time counting...)
 - Printing > 100% progress in small world algorithm.
+- Memory leaks on graph generation?
