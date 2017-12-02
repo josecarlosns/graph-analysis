@@ -195,7 +195,7 @@
                 (incf total-time end-time)
                 (when verbose
                     (print-progress (1+ n) number-of-nodes total-time))))
-        (setf (gethash "adj-list" (properties graph)) (generate-adj-list graph))
+        (setf (adj-list graph) (generate-adj-list graph))
         (when verbose
             (progn
                 (terpri)
@@ -273,7 +273,7 @@
                 (terpri)
                 (format t "Done!")
                 (terpri)))
-        (setf (gethash "adj-list" (properties graph)) (generate-adj-list graph))
+        (setf (adj-list graph) (generate-adj-list graph))
         graph))
 
 ;; Creates a random graph using the model of Watts e Strogatz, named "small world", where initially
@@ -281,7 +281,7 @@
 (defmethod small-world (number-of-nodes degree p type &optional &key (verbose nil))
     (let ((graph nil) (adj-list nil) (start-time nil) (end-time nil) (total-time 0) (progress 0) (max-progress nil) (r-state (make-random-state t)))
         (setf graph (regular-graph number-of-nodes degree type :verbose verbose))
-        (setf adj-list (gethash "adj-list" (properties graph)))
+        (setf adj-list (adj-list graph))
         (setf max-progress (* number-of-nodes (1- number-of-nodes)))
         (when (= 2 type)
             (setf max-progress (/ max-progress 2)))
@@ -331,7 +331,7 @@
                 (terpri)
                 (format t "Done!")
                 (terpri)))
-        (setf (gethash "adj-list" (properties graph)) (adj-list graph))
+        (setf (adj-list graph) (adj-list graph))
         graph))
 
 ;; Returns an random scale-free graph, according to the Barabási and Albert (1999) model of scale-free graphs
@@ -384,5 +384,5 @@
                 (terpri)
                 (format t "Done!")
                 (terpri)))
-        (setf (gethash "adj-list" (properties graph)) adj-list)
+        (setf (adj-list graph) adj-list)
         graph))

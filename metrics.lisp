@@ -16,7 +16,7 @@
 (defmethod degrees ((g graph) &optional &key (verbose nil))
     (let ((out-array nil) (in-array nil) (adj-list nil) (number-of-nodes nil) (total-time 0) (type nil))
         (setf number-of-nodes (gethash "number-of-nodes" (properties g)))
-        (setf adj-list (gethash "adj-list" (properties g)))
+        (setf adj-list (adj-list g))
         (setf type (gethash "type" (properties g)))
         (setf out-array (make-array number-of-nodes :initial-element 0))
         (when (= 1 type)
@@ -121,7 +121,7 @@
         (queue-put origin unvisited-nodes)
         (setf (aref bfs-tree origin) origin)
         (setf (aref distances origin) 0)
-        (setf adj-list (gethash "adj-list" (properties g)))
+        (setf adj-list (adj-list g))
         (loop
             (let ((current-node nil))
                 (setf current-node (queue-pop unvisited-nodes))
