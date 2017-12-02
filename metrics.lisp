@@ -229,7 +229,7 @@
                 (dotimes (n 50)
                     (princ "#"))
                 (terpri)
-                (format t "Calculating average diameter and connectedness...")
+                (format t "Calculating metrics...")
                 (terpri)))
         (if (= 1 type)
             (progn
@@ -258,7 +258,7 @@
                 (incf total-time end-time)
                 (when verbose
                     (print-progress n number-of-graphs total-time))))
-        (setf connected-graphs (- number-of-nodes unconnected-graphs))
+        (setf connected-graphs (- number-of-graphs unconnected-graphs))
         (when (> connected-graphs 0)
             (dotimes (index number-of-nodes)
                 (if (= 1 type)
@@ -285,22 +285,25 @@
         (setf unconnected-graphs (if (= 0 unconnected-graphs) 1 (/ connected-graphs number-of-graphs)))
         (list average-diameter unconnected-graphs average-degree-dist)))
 
-;; Calculates the conectedness of random graphs over p{0-100}, which is the probability of link between two nodes
-(defmethod connectedness-over-p (number-of-graphs number-of-nodes type &optional &key (verbose nil))
-    (let ((total-time 0) (data nil) (connectedness nil))
+;; Calculates the metrics of random graphs over p{0-100}, which is the probability of link between two nodes
+(defmethod metrics-over-p (number-of-graphs number-of-nodes type &optional &key (verbose nil))
+    (let ((total-time 0) (data nil) (metrics nil))
+        (setf metrics '(nil nil))
         (when verbose
             (progn
                 (terpri)
                 (dotimes (n 50)
                     (princ "#"))
                 (terpri)
-                (format t "Calculating conectedness over p...")
+                (format t "Calculating metrics over p...")
                 (terpri)))
         (do ((n 100 (1- n)))
-            ((< n 0) connectedness)
-            (let ((start-time nil) (end-time nil))
+            ((< n 0) metrics)
+            (let ((start-time nil) (end-time nil) (result nil))
                 (setf start-time (get-internal-real-time))
-                (push (second (random-graphs-analysis number-of-graphs number-of-nodes type n)) connectedness)
+                (setf result (random-graphs-analysis number-of-graphs number-of-nodes type n))
+                (push (first result) (first metrics))
+                (push (second result) (second metrics))
                 (setf end-time (get-internal-real-time))
                 (decf end-time start-time)
                 (incf total-time end-time)
@@ -314,35 +317,4 @@
                 (dotimes (n 50)
                     (princ "#"))
                 (terpri)))
-        connectedness))
-
-;; Calculates the average diameter of random graphs over p{0-100}, which is the probability of link between two nodes
-(defmethod diameter-over-p (number-of-graphs number-of-nodes type &optional &key (verbose nil))
-    (let ((total-time 0) (data nil) (connectedness nil))
-        (when verbose
-            (progn
-                (terpri)
-                (dotimes (n 50)
-                    (princ "#"))
-                (terpri)
-                (format t "Calculating average distance over p...")
-                (terpri)))
-        (do ((n 100 (1- n)))
-            ((< n 0) connectedness)
-            (let ((start-time nil) (end-time nil))
-                (setf start-time (get-internal-real-time))
-                (push (first (random-graphs-analysis number-of-graphs number-of-nodes type n)) connectedness)
-                (setf end-time (get-internal-real-time))
-                (decf end-time start-time)
-                (incf total-time end-time)
-                (when verbose
-                    (print-progress (- 100 n) 100 total-time))))
-        (when verbose
-            (progn
-                (terpri)
-                (format t "Done!")
-                (terpri)
-                (dotimes (n 50)
-                    (princ "#"))
-                (terpri)))
-        connectedness))
+        metrics))
