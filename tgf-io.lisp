@@ -45,7 +45,6 @@
             (close in))
         (setf (nodes graph) (make-array (list-length node-id-list) :initial-element nil))
         (setf adj-list (make-array (list-length node-id-list) :initial-element nil))
-        ;; (print adj-list)
         (let ((number-of-nodes 0))
             (loop for node in node-list and index from 0 do
                 (setf (aref (nodes graph) index) node)

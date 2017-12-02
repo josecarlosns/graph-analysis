@@ -78,7 +78,15 @@
 ;; Each element of the list will be printed on a new line.
 (defun plot-data (data &optional &key (stream t))
     (loop for e in data and index from 0 do
-        (format stream "~d ~f ~%" index e)))
+        (if (listp e)
+            (format stream "~d ~{~f ~}~%" index e)
+            (if (arrayp e)
+                (progn
+                    (format stream "~d " index)
+                    (dotimes (n (length e))
+                        (format stream "~f " (aref e n)))
+                    (format stream "~%"))
+                (format stream "~d ~f~%" index e)))))
 
 ;; Saves the data in an file in an "plottable" way
 (defun save-data (data file-name)

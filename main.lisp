@@ -56,7 +56,7 @@
                         (setf graph (random-graph number-of-nodes graph-type edge-prob :verbose t))
                             (setf connected (run-analysis graph :verbose t))
                             (print-graph-info graph :verbose connected)))
-                (3  (let ((number-of-graphs nil) (number-of-nodes nil) (graph-type nil) (option nil))
+                (3  (let ((number-of-graphs nil) (number-of-nodes nil) (graph-type nil) (option nil) (model nil))
                         (loop 
                             (format t "Number of graphs generated per iteration:~%")
                             (finish-output)
@@ -78,6 +78,16 @@
                             (if (and (numberp graph-type) (> graph-type 0) (< graph-type 3))
                                 (return nil)
                                 (format t "Invalid input!~%")))
+                        ;; (loop 
+                        ;;     (format t "Model of random graph:~%~t1-Erdös and Rényi.~t2-Small World.~t3-Scale-free.~%")
+                        ;;     (finish-output)
+                        ;;     (setf model (read))
+                        ;;     (if (and (numberp model) (> model 0) (< model 4))
+                        ;;         (return nil)
+                        ;;         (format t "Invalid input!~%")))
+                        ;; (case model
+                        ;;     (2  (progn
+                        ;;             )))
                         (let ((results nil) (savep nil))
                             (setf results (metrics-over-p number-of-graphs number-of-nodes graph-type :verbose t))
                             (format t "Do you want to save the data to a file?~t1- Yes.~t2- No.~%")
@@ -86,13 +96,21 @@
                             (when (numberp savep)
                                 (case savep
                                     (1  (let ((file-name nil) (metric nil))
-                                        (format t "Name of the file:~%Obs.: It will be saved in current directory in different file. The metrics analysed will be appended to the file name.~%")
+                                        (format t "Name of the file:~%Obs.: It will be saved in current directory in different files. The metrics analysed will be appended to the file name.~%")
                                         (finish-output)
                                         (setf file-name (read-line))
                                         (loop for data in results and index from 0 do
                                             (case index
                                                 (0 (setf metric "-average_diameter.txt"))
                                                 (1 (setf metric "-connectedness.txt"))
-                                                (2 (setf metric "-degree_distribution.txt")))
+                                                (2 (setf metric "-distance.txt"))
+                                                (3 (setf metric "-efficiency.txt"))
+                                                (4 (if  (= 1 graph-type) 
+                                                        (progn
+                                                            (setf metric "-degree_distribution_out.txt")
+                                                            (save-data (first data) (concatenate 'string file-name metric))
+                                                            (setf data (second data))
+                                                            (setf metric "-degree_distribution_in.txt"))
+                                                        (setf metric "-degree_distribution.txt"))))
                                             (save-data data (concatenate 'string file-name metric)))))))))))
             (format t "Invalid input!~%"))))

@@ -222,7 +222,8 @@
 ;; Generates a number of random graphs, analyses them and gives metrics like average diameter and conectedness.
 ;; Unconnected graphs are not counted in the average diameter calculation
 (defmethod random-graphs-analysis (number-of-graphs number-of-nodes type edge-prob &optional &key (verbose nil))
-    (let ((average-diameter 0) (unconnected-graphs 0) (total-time 0) (average-degree-dist nil) (connected-graphs 0))
+    (let ((average-diameter 0) (unconnected-graphs 0) (total-time 0) (average-degree-dist nil) (connected-graphs 0)
+            (distance 0) (efficiency 0))
         (when verbose
             (progn
                 (terpri)
@@ -245,6 +246,8 @@
                         (setf diameter (gethash "diameter" (properties graph)))
                         (incf average-diameter diameter)
                         (setf degree-dist (gethash "degree-dist" (properties graph)))
+                        (incf distance (gethash "average-distance" (properties graph)))
+                        (incf efficiency (gethash "average-efficiency" (properties graph)))
                         (dotimes (index number-of-nodes)
                             (let ((out nil) (in nil))
                                 (if (= 2 type)
@@ -274,6 +277,8 @@
                         (setf out (/ out connected-graphs))
                         (setf (aref average-degree-dist index) out)))))
         (setf average-diameter (/ average-diameter (if (= 0 connected-graphs) 1 connected-graphs)))
+        (setf distance (/ distance (if (= 0 connected-graphs) 1 connected-graphs)))
+        (setf efficiency (/ efficiency (if (= 0 connected-graphs) 1 connected-graphs)))
         (when verbose
             (progn
                 (terpri)
@@ -283,12 +288,79 @@
                     (princ "#"))
                 (terpri)))
         (setf unconnected-graphs (if (= 0 unconnected-graphs) 1 (/ connected-graphs number-of-graphs)))
-        (list average-diameter unconnected-graphs average-degree-dist)))
+        (list average-diameter unconnected-graphs distance efficiency average-degree-dist)))
+
+;; (defmethod small-world-graphs-analysis (number-of-graphs number-of-nodes type degrees link-prob &optional &key (verbose nil))
+;;     (let ((average-diameter 0) (unconnected-graphs 0) (total-time 0) (average-degree-dist nil) (connected-graphs 0) 
+;;             (distance 0) (efficiency 0))
+;;         (when verbose
+;;             (progn
+;;                 (terpri)
+;;                 (dotimes (n 50)
+;;                     (princ "#"))
+;;                 (terpri)
+;;                 (format t "Calculating metrics...")
+;;                 (terpri)))
+;;         (if (= 1 type)
+;;             (progn
+;;                 (push (make-array number-of-nodes :initial-element 0) average-degree-dist)
+;;                 (push (make-array number-of-nodes :initial-element 0) average-degree-dist))
+;;             (setf average-degree-dist (make-array number-of-nodes :initial-element 0)))
+;;         (dotimes (n number-of-graphs)
+;;             (let ((diameter nil) (graph nil) (degree-dist nil) (start-time nil) (end-time nil))
+;;                 (setf start-time (get-internal-real-time))
+;;                 (setf graph (random-graph number-of-nodes type edge-prob))
+;;                 (if (run-analysis graph)
+;;                     (progn
+;;                         (setf diameter (gethash "diameter" (properties graph)))
+;;                         (incf average-diameter diameter)
+;;                         (setf degree-dist (gethash "degree-dist" (properties graph)))
+;;                         (incf distance (gethash "average-distance" (properties graph)))
+;;                         (incf efficiency (gethash "average-efficiency" (properties graph)))
+;;                         (dotimes (index number-of-nodes)
+;;                             (let ((out nil) (in nil))
+;;                                 (if (= 2 type)
+;;                                     (incf (aref average-degree-dist index) (aref degree-dist index))
+;;                                     (progn
+;;                                         (incf (aref (first average-degree-dist) index) (aref (first degree-dist) index))
+;;                                         (incf (aref (second average-degree-dist) index) (aref (second degree-dist) index)))))))
+;;                     (incf unconnected-graphs))
+;;                 (setf end-time (get-internal-real-time))
+;;                 (decf end-time start-time)
+;;                 (incf total-time end-time)
+;;                 (when verbose
+;;                     (print-progress n number-of-graphs total-time))))
+;;         (setf connected-graphs (- number-of-graphs unconnected-graphs))
+;;         (when (> connected-graphs 0)
+;;             (dotimes (index number-of-nodes)
+;;                 (if (= 1 type)
+;;                     (let ((out nil) (in nil))
+;;                         (setf out (aref (first average-degree-dist) index))
+;;                         (setf in (aref (second average-degree-dist) index))
+;;                         (setf out (/ out connected-graphs))
+;;                         (setf in (/ in connected-graphs))
+;;                         (setf (aref (first average-degree-dist) index) out)
+;;                         (setf (aref (second average-degree-dist) index) in))
+;;                     (let ((out nil))
+;;                         (setf out (aref average-degree-dist index))
+;;                         (setf out (/ out connected-graphs))
+;;                         (setf (aref average-degree-dist index) out)))))
+;;         (setf average-diameter (/ average-diameter (if (= 0 connected-graphs) 1 connected-graphs)))
+;;         (when verbose
+;;             (progn
+;;                 (terpri)
+;;                 (format t "Done!")
+;;                 (terpri)
+;;                 (dotimes (n 50)
+;;                     (princ "#"))
+;;                 (terpri)))
+;;         (setf unconnected-graphs (if (= 0 unconnected-graphs) 1 (/ connected-graphs number-of-graphs)))
+;;         (list average-diameter unconnected-graphs distance efficiency average-degree-dist)))
 
 ;; Calculates the metrics of random graphs over p{0-100}, which is the probability of link between two nodes
 (defmethod metrics-over-p (number-of-graphs number-of-nodes type &optional &key (verbose nil))
     (let ((total-time 0) (data nil) (metrics nil))
-        (setf metrics '(nil nil))
+        (setf metrics '(nil nil nil nil nil))
         (when verbose
             (progn
                 (terpri)
@@ -302,8 +374,8 @@
             (let ((start-time nil) (end-time nil) (result nil))
                 (setf start-time (get-internal-real-time))
                 (setf result (random-graphs-analysis number-of-graphs number-of-nodes type n))
-                (push (first result) (first metrics))
-                (push (second result) (second metrics))
+                (loop for data in result and index from 0 do
+                    (push data (nth index metrics)))
                 (setf end-time (get-internal-real-time))
                 (decf end-time start-time)
                 (incf total-time end-time)

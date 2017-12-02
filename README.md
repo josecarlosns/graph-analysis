@@ -29,3 +29,4 @@ LISP code for graph analysis, including many implementations of Graph Theory alg
 - Time in progress printing is incorrect sometimes (probably due to accuracy of time counting...)
 - Printing > 100% progress in small world algorithm.
 - Memory leaks on graph generation?
+- Metrics for directed graphs are being miscalculated.
