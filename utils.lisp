@@ -106,7 +106,11 @@
             (let ((rand-num nil) (neighbor 0) (prob nil) (degree nil) (prob-sum 0))
                 (setf rand-num (random 1.0 r-state))
                 (loop
+                    (when (>= neighbor (length adj-list))
+                        (setf neighbor (rem neighbor (length adj-list))))
                     (setf degree (list-length (aref adj-list neighbor)))
+                    (when (>= degree (1- (length adj-list)))
+                        (setf prob 0))
                     (if (= 0 degree)
                         (if (= 0 degree-sum)
                             (setf prob (/ 1 (length adj-list)))
@@ -115,7 +119,10 @@
                             (setf prob 1)
                             (setf prob (/ degree degree-sum))))
                     (incf prob-sum prob)
-                    (if (and (not (find neighbor neighbors)) (<= rand-num prob-sum) (not (= neighbor node)))
+                    (if (and    (not (find neighbor neighbors))
+                                (not (= 0 prob)) 
+                                (<= rand-num prob-sum) 
+                                (not (= neighbor node)))
                         (progn
                             (push neighbor neighbors)
                             (decf degree-sum degree)

@@ -157,7 +157,7 @@
 ;;     Returns:
 ;;         An random graph
 (defmethod random-graph (number-of-nodes type edge-prob &optional &key (verbose nil))
-    (let ((graph nil) (total-time 0) (start-time nil) (end-time nil) (r-state (make-random-state t)) (node-list nil))
+    (let ((graph nil) (total-time 0) (start-time nil) (end-time nil) (r-state (make-random-state t)))
         (setf graph (empty-graph type nil))
         (setf (gethash "number-of-nodes" (properties graph)) number-of-nodes)
         (when verbose
@@ -174,7 +174,7 @@
                 (setf new-node (make-node :id node-id))
                 (setf (aref (nodes graph) node-id) new-node)))
         (dotimes (n number-of-nodes)
-            (let ((node1 nil) (node2 nil))
+            (let ((node1 nil))
                 (setf start-time (get-internal-real-time))
                 (setf node1 (aref (nodes graph) n))
                 (dotimes (x (if (= 1 type) number-of-nodes (- number-of-nodes n)))
@@ -227,7 +227,7 @@
                 (setf new-node (make-node :id node-id :index node-id))
                 (setf (aref (nodes graph) node-id) new-node)))
         (dotimes (node1-index number-of-nodes)
-            (let ((counter 0) (current-degree 0) (node1 nil) (node2-index nil) (adj-nodes nil) (start-time nil) (end-time nil))
+            (let ((counter 0) (current-degree 0) (node1 nil) (node2-index nil) (start-time nil) (end-time nil))
                 (setf start-time (get-internal-real-time))
                 (setf node1 (aref (nodes graph) node1-index))
                 (setf node2-index (- node1-index (floor (/ degree 2))))
@@ -278,7 +278,7 @@
 
 ;; Creates a random graph using the model of Watts e Strogatz, named "small world", where initially
 ;; each node has a degree of "degree", and has an extra p (0-100) chance of "redefining" links to other nodes.
-(defmethod small-world (number-of-nodes degree p type &optional &key (verbose nil))
+(defmethod small-world (number-of-nodes type p degree &optional &key (verbose nil))
     (let ((graph nil) (adj-list nil) (start-time nil) (end-time nil) (total-time 0) (progress 0) (max-progress nil) (r-state (make-random-state t)))
         (setf graph (regular-graph number-of-nodes degree type :verbose verbose))
         (setf adj-list (adj-list graph))
@@ -306,17 +306,22 @@
                                 (if (find node2 (node-adj-nodes node1))
                                     (progn
                                         (decf (gethash "number-of-edges" (properties graph)))
-                                        (setf (edges graph) (remove edge (edges graph) :test #'equal))
+                                        (setf (edges graph) (remove edge (edges graph)))
                                         (setf (node-adj-nodes node1) (remove node2 (node-adj-nodes node1)))
+                                        (setf (aref adj-list (node-index node1)) (remove (node-index node2) (aref adj-list (node-index node1))))
                                         (when (= 2 type)
                                             (progn
                                                 (setf (node-adj-nodes node2) (remove node1 (node-adj-nodes node2)))
-                                                (setf (edges graph) (remove (reverse edge) (edges graph) :test #'equal)))))
+                                                (setf (aref adj-list (node-index node2)) (remove (node-index node1) (aref adj-list (node-index node2))))
+                                                (setf (edges graph) (remove (reverse edge) (edges graph))))))
                                     (progn
                                         (add-edge graph edge)
                                         (push node2 (node-adj-nodes node1))
+                                        (push (node-index node2) (aref adj-list (node-index node1)))
                                         (when (= 2 type)
-                                            (push node1 (node-adj-nodes node2))))))))
+                                            (progn
+                                                (push (node-index node1) (aref adj-list (node-index node2)))
+                                                (push node1 (node-adj-nodes node2)))))))))
                     (setf end-time (get-internal-real-time))
                     (decf end-time start-time)
                     (incf total-time end-time)
@@ -335,8 +340,8 @@
         graph))
 
 ;; Returns an random scale-free graph, according to the Barabási and Albert (1999) model of scale-free graphs
-(defmethod scale-free (number-of-nodes edges-per-insertion type &optional &key (verbose nil))
-    (let  ((r-state nil) (graph nil) (degree nil) (adj-list nil) (start-time nil) (end-time nil) (total-time 0))
+(defmethod scale-free (number-of-nodes type edges-per-insertion &optional &key (verbose nil))
+    (let  ((r-state nil) (graph nil) (adj-list nil) (start-time nil) (end-time nil) (total-time 0))
         (setf graph (empty-graph type nil))
         (setf (gethash "number-of-nodes" (properties graph)) number-of-nodes)
         (setf r-state (make-random-state t))
@@ -356,21 +361,22 @@
                 (setf (aref (nodes graph) node-id) new-node)))
         (dotimes (node1-index number-of-nodes)
             (let ((node1 nil))
-            (setf node1 (aref (nodes graph) node1-index))
             (setf start-time (get-internal-real-time))
+            (setf node1 (aref (nodes graph) node1-index))
             (let ((neighbors nil))
                 (setf neighbors (choose-neighbors adj-list node1-index edges-per-insertion))
                 (dolist (node2-index neighbors)
-                    (let ((edge nil) (node2 nil))
-                        (setf node2 (aref (nodes graph) node2-index))
-                        (setf edge (list node1 node2))
-                        (push node2 (node-adj-nodes node1))
-                        (push node2-index (aref adj-list node1-index))
-                        (add-edge graph edge)
-                        (when (= 2 type)
-                            (progn
-                                (push node1-index (aref adj-list node2-index))
-                                (push node1 (node-adj-nodes node2)))))))
+                    (when (not (find node2-index (aref adj-list node1-index)))
+                        (let ((edge nil) (node2 nil))
+                            (setf node2 (aref (nodes graph) node2-index))
+                            (setf edge (list node1 node2))
+                            (push node2 (node-adj-nodes node1))
+                            (push node2-index (aref adj-list node1-index))
+                            (add-edge graph edge)
+                            (when (= 2 type)
+                                (progn
+                                    (push node1-index (aref adj-list node2-index))
+                                    (push node1 (node-adj-nodes node2))))))))
                 (setf end-time (get-internal-real-time))
                 (decf end-time start-time)
                 (incf total-time end-time)

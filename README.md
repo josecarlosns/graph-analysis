@@ -10,6 +10,8 @@ LISP code for graph analysis, including many implementations of Graph Theory alg
 - Optimize the code.
     - The small world algorithm is not optimized.
     - The average diameter and connectedness algorithms are too slow to my liking...
+    - Idea: use an hashtable or another structure to store graph data like node-ids and edges and use a simple generated adjacency list, where each node is represented by an index on the list, not its ID on the graph (which may be non-sequential), for better performance.
+    - Another idea: since all nodes IDs on generated random graphs are sequential, why not only generate the adj-list instead of building the whole graph structure? 
 - Support for various different types of TGF formats (loading and saving).
 - Add support for non-sequential node-ids, labels (weights, descriptions etc.) to nodes and edges.
 - Support for graph editing operations.
@@ -30,3 +32,4 @@ LISP code for graph analysis, including many implementations of Graph Theory alg
 - Printing > 100% progress in small world algorithm.
 - Memory leaks on graph generation?
 - Metrics for directed graphs are being miscalculated.
+- Duplicated codes all over, have to modularize it all.

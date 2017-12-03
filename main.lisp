@@ -56,7 +56,7 @@
                         (setf graph (random-graph number-of-nodes graph-type edge-prob :verbose t))
                             (setf connected (run-analysis graph :verbose t))
                             (print-graph-info graph :verbose connected)))
-                (3  (let ((number-of-graphs nil) (number-of-nodes nil) (graph-type nil) (option nil) (model nil))
+                (3  (let ((number-of-graphs nil) (number-of-nodes nil) (graph-type nil) (option nil) (model nil) (results nil))
                         (loop 
                             (format t "Number of graphs generated per iteration:~%")
                             (finish-output)
@@ -78,18 +78,27 @@
                             (if (and (numberp graph-type) (> graph-type 0) (< graph-type 3))
                                 (return nil)
                                 (format t "Invalid input!~%")))
-                        ;; (loop 
-                        ;;     (format t "Model of random graph:~%~t1-Erdös and Rényi.~t2-Small World.~t3-Scale-free.~%")
-                        ;;     (finish-output)
-                        ;;     (setf model (read))
-                        ;;     (if (and (numberp model) (> model 0) (< model 4))
-                        ;;         (return nil)
-                        ;;         (format t "Invalid input!~%")))
-                        ;; (case model
-                        ;;     (2  (progn
-                        ;;             )))
-                        (let ((results nil) (savep nil))
-                            (setf results (metrics-over-p number-of-graphs number-of-nodes graph-type :verbose t))
+                        (loop 
+                            (format t "Model of random graph:~%~t1-Erdös and Rényi.~t2-Small World.~t3-Scale-free.~%")
+                            (finish-output)
+                            (setf model (read))
+                            (if (and (numberp model) (> model 0) (< model 4))
+                                (return nil)
+                                (format t "Invalid input!~%")))
+                        (case model
+                            (1  (progn   
+                                    (setf results (metrics-random-graph number-of-graphs number-of-nodes graph-type :verbose t))))
+                            (2  (let ((initial-degree nil))              
+                                    (loop 
+                                        (format t "Initial degree:~%")
+                                        (finish-output)
+                                        (setf initial-degree (read))
+                                        (if (and (numberp initial-degree) (> initial-degree 0) (< model (1- number-of-nodes)))
+                                            (return nil)
+                                            (format t "Invalid input!~%")))
+                                    (setf results (metrics-small-world number-of-graphs number-of-nodes graph-type initial-degree :verbose t))))
+                            (3  (setf results (metrics-scale-free number-of-graphs number-of-nodes graph-type :verbose t))))
+                        (let ((savep nil))
                             (format t "Do you want to save the data to a file?~t1- Yes.~t2- No.~%")
                             (finish-output)
                             (setf savep (read))
